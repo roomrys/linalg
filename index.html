@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A linear algebra project.">
+    <title>Linear Algebra Project</title>
+    <link rel="stylesheet" href="./stylesheets/index.css">
+    <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
+</head>
+
+<body style="overflow: hidden;">
+    <main>
+        <div class="controls"
+            style="position: fixed; top: 10px; left: 10px; background: rgba(255, 255, 255, 0.8); padding: 10px; border-radius: 5px; z-index: 1;">
+            <div>
+                <label for="x-rotation">X-Axis Rotation: </label>
+                <input type="range" id="x-rotation" min="0" max="360" value="0">
+                <span id="x-value">0°</span>
+            </div>
+            <div>
+                <label for="y-rotation">Y-Axis Rotation: </label>
+                <input type="range" id="y-rotation" min="0" max="360" value="0">
+                <span id="y-value">0°</span>
+            </div>
+
+            <!-- Scale controls -->
+            <div style="margin: 10px 0; border-top: 1px solid #ccc; padding-top: 10px;">
+                <div>
+                    <label for="x-scale">X-Axis Scale: </label>
+                    <input type="range" id="x-scale" min="-3" max="3" value="1" step="0.1">
+                    <span id="x-scale-value">1.0</span>
+                </div>
+                <div>
+                    <label for="y-scale">Y-Axis Scale: </label>
+                    <input type="range" id="y-scale" min="-3" max="3" value="1" step="0.1">
+                    <span id="y-scale-value">1.0</span>
+                </div>
+            </div>
+
+            <!-- Matrix sliders -->
+            <div style="margin: 10px 0; border-top: 1px solid #ccc; padding-top: 10px;">
+                <div style="margin: 5px 0;">
+                    <label for="a11-slider">a (top-left): </label>
+                    <input type="range" id="a11-slider" min="-3" max="3" value="1" step="0.1">
+                    <span id="a11-value">1.0</span>
+                </div>
+                <div style="margin: 5px 0;">
+                    <label for="a12-slider">b (top-right): </label>
+                    <input type="range" id="a12-slider" min="-3" max="3" value="0" step="0.1">
+                    <span id="a12-value">0.0</span>
+                </div>
+                <div style="margin: 5px 0;">
+                    <label for="a21-slider">c (bottom-left): </label>
+                    <input type="range" id="a21-slider" min="-3" max="3" value="0" step="0.1">
+                    <span id="a21-value">0.0</span>
+                </div>
+                <div style="margin: 5px 0;">
+                    <label for="a22-slider">d (bottom-right): </label>
+                    <input type="range" id="a22-slider" min="-3" max="3" value="1" step="0.1">
+                    <span id="a22-value">1.0</span>
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <span style="font-size: 16px; font-weight: bold;">A = </span>
+
+                <!-- Left bracket -->
+                <svg width="8" height="60" style="flex-shrink: 0;">
+                    <path d="M 6 0 L 2 0 Q 0 0 0 2 L 0 58 Q 0 60 2 60 L 6 60" fill="none" stroke="black"
+                        stroke-width="2" />
+                </svg>
+
+                <!-- Matrix inputs -->
+                <div style="display: grid; grid-template-columns: 50px 50px; gap: 8px; margin: 0 4px;">
+                    <input type="number" id="a11" value="1" step="0.1"
+                        style="width: 45px; height: 22px; padding: 2px; text-align: center; border: 1px solid #ccc;">
+                    <input type="number" id="a12" value="0" step="0.1"
+                        style="width: 45px; height: 22px; padding: 2px; text-align: center; border: 1px solid #ccc;">
+                    <input type="number" id="a21" value="0" step="0.1"
+                        style="width: 45px; height: 22px; padding: 2px; text-align: center; border: 1px solid #ccc;">
+                    <input type="number" id="a22" value="1" step="0.1"
+                        style="width: 45px; height: 22px; padding: 2px; text-align: center; border: 1px solid #ccc;">
+                </div>
+
+                <!-- Right bracket -->
+                <svg width="8" height="60" style="flex-shrink: 0;">
+                    <path d="M 2 0 L 6 0 Q 8 0 8 2 L 8 58 Q 8 60 6 60 L 2 60" fill="none" stroke="black"
+                        stroke-width="2" />
+                </svg>
+            </div>
+
+            <!-- Vector sliders -->
+            <div style="margin: 10px 0; border-top: 1px solid #ccc; padding-top: 10px;">
+                <div style="margin: 5px 0;">
+                    <label for="v1-slider">v₁ (x-component): </label>
+                    <input type="range" id="v1-slider" min="-3" max="3" value="3" step="0.1">
+                    <span id="v1-value">3.0</span>
+                </div>
+                <div style="margin: 5px 0;">
+                    <label for="v2-slider">v₂ (y-component): </label>
+                    <input type="range" id="v2-slider" min="-3" max="3" value="-3" step="0.1">
+                    <span id="v2-value">-3.0</span>
+                </div>
+            </div>
+            <!-- Vector v control -->
+            <div style="display: flex; align-items: center; gap: 5px; margin-top: 15px;">
+                <span style="font-size: 16px; font-weight: bold;">v = </span>
+
+                <!-- Left bracket -->
+                <svg width="8" height="60" style="flex-shrink: 0;">
+                    <path d="M 6 0 L 2 0 Q 0 0 0 2 L 0 58 Q 0 60 2 60 L 6 60" fill="none" stroke="black"
+                        stroke-width="2" />
+                </svg>
+
+                <!-- Vector inputs -->
+                <div style="display: grid; grid-template-rows: 22px 22px; gap: 8px; margin: 0 4px;">
+                    <input type="number" id="v1" value="3" step="0.1"
+                        style="width: 45px; height: 22px; padding: 2px; text-align: center; border: 1px solid #ccc;">
+                    <input type="number" id="v2" value="-3" step="0.1"
+                        style="width: 45px; height: 22px; padding: 2px; text-align: center; border: 1px solid #ccc;">
+                </div>
+
+                <!-- Right bracket -->
+                <svg width="8" height="60" style="flex-shrink: 0;">
+                    <path d="M 2 0 L 6 0 Q 8 0 8 2 L 8 58 Q 8 60 6 60 L 2 60" fill="none" stroke="black"
+                        stroke-width="2" />
+                </svg>
+            </div>
+        </div>
+        </div>
+
+        <svg width="100vw" height="100vh" viewBox="0 0 400 400" style="position: relative;">
+            <defs>
+                <pattern id="grid-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
+                    <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#999999" stroke-width="1" />
+                </pattern>
+
+                <!-- New pattern for x-grid lines -->
+                <pattern id="x-grid-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
+                    <line x1="0" y1="0" x2="20" y2="0" stroke="red" stroke-width="1" opacity="0.5" />
+                </pattern>
+
+                <!-- New pattern for y-grid lines -->
+                <pattern id="y-grid-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
+                    <line x1="0" y1="0" x2="0" y2="20" stroke="blue" stroke-width="1" opacity="0.5" />
+                </pattern>
+            </defs>
+
+            <!-- Grid background -->
+            <rect width="100%" height="100%" fill="url(#grid-pattern)" opacity="0.3" style="pointer-events: all;" />
+
+            <!-- Center point -->
+            <circle cx="200" cy="200" r="3" fill="black" />
+
+            <!-- X-axis grid lines -->
+            <line x1="0" y1="200" x2="400" y2="200" stroke="#999999" stroke-width="3" />
+            <g id="x-grid" transform="rotate(0, 200, 200)">
+                <!-- Parallel grid lines -->
+                <g class="x-grid-lines" id="x-grid-lines"></g>
+            </g>
+
+            <!-- Y-axis grid lines -->
+            <line x1="200" y1="0" x2="200" y2="400" stroke="#999999" stroke-width="3" />
+            <g id="y-grid" transform="rotate(0, 200, 200)">
+                <!-- Parallel grid lines -->
+                <g class="y-grid-lines" id="y-grid-lines"></g>
+            </g>
+
+
+            <!-- Vector arrows -->
+            <defs>
+                <marker id="arrowhead" markerWidth="4" markerHeight="4" refX="3" refY="2" orient="auto">
+                    <polygon points="0 0, 4 2, 0 4" fill="green" />
+                </marker>
+
+                <!-- Arrowhead for i vector (red) -->
+                <marker id="i-arrowhead" markerWidth="4" markerHeight="4" refX="3" refY="2" orient="auto">
+                    <polygon points="0 0, 4 2, 0 4" fill="red" />
+                </marker>
+
+                <!-- Arrowhead for j vector (blue) -->
+                <marker id="j-arrowhead" markerWidth="4" markerHeight="4" refX="3" refY="2" orient="auto">
+                    <polygon points="0 0, 4 2, 0 4" fill="blue" />
+                </marker>
+
+                <!-- Arrowhead for transformed vector Av (purple) -->
+                <marker id="av-arrowhead" markerWidth="4" markerHeight="4" refX="3" refY="2" orient="auto">
+                    <polygon points="0 0, 4 2, 0 4" fill="purple" />
+                </marker>
+            </defs>
+
+            <line id="vector-line" x1="200" y1="200" x2="260" y2="260" stroke="green" stroke-width="3"
+                marker-end="url(#arrowhead)" />
+
+            <!-- Transformed vector Av -->
+            <line id="av-vector-line" x1="200" y1="200" x2="260" y2="260" stroke="purple" stroke-width="3"
+                marker-end="url(#av-arrowhead)" />
+
+            <!-- Vector labels -->
+            <text id="vector-label" x="210" y="190" fill="green" font-size="14" font-weight="bold">v</text>
+            <text id="av-vector-label" x="210" y="190" fill="purple" font-size="14" font-weight="bold">Av</text>
+
+        </svg>
+    </main>
+
+    <!-- Declare variables -->
+    <script>
+        const xGridContainer = document.getElementById('x-grid-lines');
+        const yGridContainer = document.getElementById('y-grid-lines');
+        const centerY = 200;
+        const centerX = 200;
+        const svgWidth = 400;
+        const svgHeight = 400;
+
+        const xRotationSlider = document.getElementById('x-rotation');
+        const yRotationSlider = document.getElementById('y-rotation');
+        const xScaleSlider = document.getElementById('x-scale');
+        const yScaleSlider = document.getElementById('y-scale');
+        const xValueSpan = document.getElementById('x-value');
+        const yValueSpan = document.getElementById('y-value');
+        const xScaleValueSpan = document.getElementById('x-scale-value');
+        const yScaleValueSpan = document.getElementById('y-scale-value');
+        const xGrid = document.getElementById('x-grid');
+        const yGrid = document.getElementById('y-grid');
+
+        // Matrix element sliders
+        const a11Slider = document.getElementById('a11-slider');
+        const a12Slider = document.getElementById('a12-slider');
+        const a21Slider = document.getElementById('a21-slider');
+        const a22Slider = document.getElementById('a22-slider');
+
+        // Matrix element inputs
+        const a11Input = document.getElementById('a11');
+        const a12Input = document.getElementById('a12');
+        const a21Input = document.getElementById('a21');
+        const a22Input = document.getElementById('a22');
+
+        // Matrix element value displays
+        const a11Value = document.getElementById('a11-value');
+        const a12Value = document.getElementById('a12-value');
+        const a21Value = document.getElementById('a21-value');
+        const a22Value = document.getElementById('a22-value');
+
+        // Vector element sliders
+        const v1Slider = document.getElementById('v1-slider');
+        const v2Slider = document.getElementById('v2-slider');
+
+        // Vector element inputs
+        const v1Input = document.getElementById('v1');
+        const v2Input = document.getElementById('v2');
+
+        // Vector element value displays
+        const v1Value = document.getElementById('v1-value');
+        const v2Value = document.getElementById('v2-value');
+
+        // Vector drawing elements
+        const vectorLine = document.getElementById('vector-line');
+        const vectorLabel = document.getElementById('vector-label');
+
+        // Transformed vector drawing elements
+        const avVectorLine = document.getElementById('av-vector-line');
+        const avVectorLabel = document.getElementById('av-vector-label');
+    </script>
+
+    <!-- Declare functions -->
+    <script>
+        function extractBasisVectors() {
+            // Get matrix values
+            const a11 = parseFloat(a11Input.value) || 0;
+            const a12 = parseFloat(a12Input.value) || 0;
+            const a21 = parseFloat(a21Input.value) || 0;
+            const a22 = parseFloat(a22Input.value) || 0;
+
+            // Extract basis vectors
+            let basisX = { x: a11, y: a21 }; // First column
+            let basisY = { x: a12, y: a22 }; // Second column
+
+            return { basisX, basisY };
+        }
+
+        // Generate x-axis grid lines function with spacing parameter
+        function generateXGridLines(spacing = 20, rotation = 0, basisY = { x: 0, y: 1 }) {
+            // Clear existing lines
+            xGridContainer.innerHTML = '';
+
+            // Calculate line length to ensure it extends to edges
+            const lineLength = Math.sqrt(svgWidth * svgWidth + svgHeight * svgHeight);
+
+            function generateXGridLine(i, positive = true) {
+                const offsetX = basisY.x * i * spacing;
+                const offsetY = basisY.y * i * spacing;
+                let intersectionX = positive ? offsetX + 200 : -offsetX + 200;
+                let intersectionY = positive ? (-offsetY + 200) : (offsetY + 200);
+
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+
+                // Calculate line endpoints based on rotation
+                const radians = ((rotation) * Math.PI) / 180;
+                const dx = Math.cos(radians) * lineLength;
+                const dy = Math.sin(radians) * lineLength;
+
+
+                let x1 = intersectionX - dx;
+                let y1 = intersectionY - dy;
+                let x2 = intersectionX + dx;
+                let y2 = intersectionY + dy;
+
+                // Add a circle at the intersection point for debugging
+                const debugCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                debugCircle.setAttribute('cx', intersectionX);
+                debugCircle.setAttribute('cy', intersectionY);
+                debugCircle.setAttribute('r', '3');
+                debugCircle.setAttribute('fill', 'red');
+                xGridContainer.appendChild(debugCircle);
+
+                // Add the j basis vector line
+                if (i === 1 && positive && !(basisY.x === 0 && basisY.y === 0)) {
+                    const jLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    jLine.setAttribute('x1', 200);
+                    jLine.setAttribute('y1', 200);
+                    jLine.setAttribute('x2', intersectionX);
+                    jLine.setAttribute('y2', intersectionY);
+                    jLine.setAttribute('stroke', 'blue');
+                    jLine.setAttribute('stroke-width', '3');
+                    jLine.setAttribute('marker-end', 'url(#j-arrowhead)');
+                    xGridContainer.appendChild(jLine);
+                }
+
+                // Cap the line endpoints to SVG boundaries (0 to 400)
+                if (x1 < 0) {
+                    const t = -intersectionX / (x1 - intersectionX);
+                    x1 = 0;
+                    y1 = intersectionY + t * (y1 - intersectionY);
+                }
+                if (x1 > svgWidth) {
+                    const t = (svgWidth - intersectionX) / (x1 - intersectionX);
+                    x1 = svgWidth;
+                    y1 = intersectionY + t * (y1 - intersectionY);
+                }
+                if (x2 < 0) {
+                    const t = -intersectionX / (x2 - intersectionX);
+                    x2 = 0;
+                    y2 = intersectionY + t * (y2 - intersectionY);
+                }
+                if (x2 > svgWidth) {
+                    const t = (svgWidth - intersectionX) / (x2 - intersectionX);
+                    x2 = svgWidth;
+                    y2 = intersectionY + t * (y2 - intersectionY);
+                }
+
+                line.setAttribute('x1', x1);
+                line.setAttribute('y1', y1);
+                line.setAttribute('x2', x2);
+                line.setAttribute('y2', y2);
+                line.setAttribute('stroke', 'red');
+                line.setAttribute('stroke-width', '1');
+                line.setAttribute('opacity', '0.5');
+                xGridContainer.appendChild(line);
+                return line;
+            }
+
+            // Generate the main X-axis line
+            let line = generateXGridLine(0);
+            line.setAttribute('stroke-width', '3'); // Make main X-axis thicker
+            line.setAttribute('opacity', '1'); // Make main X-axis fully opaque
+
+            // Generate lines above center (y < 200)
+            const numLines = Math.floor(centerY / spacing);
+            for (let i = 1; i <= numLines; i++) {
+                generateXGridLine(i, positive = false);
+            }
+
+            // Generate lines below center (y > 200)
+            for (let i = 1; i <= numLines; i++) {
+                generateXGridLine(i);
+            }
+        }
+
+        // Update the generateYGridLines function to accept a spacing parameter
+        function generateYGridLines(spacing = 20, rotation = 0, basisX = { x: 1, y: 0 }) {
+            // Clear existing lines
+            yGridContainer.innerHTML = '';
+
+            // Calculate line length to ensure it extends to edges
+            const lineLength = Math.sqrt(svgWidth * svgWidth + svgHeight * svgHeight);
+
+            function generateYGridLine(i, positive = true) {
+                const offsetX = basisX.x * i * spacing;
+                const offsetY = basisX.y * i * spacing;
+                let intersectionX = positive ? offsetX + 200 : -offsetX + 200;
+                let intersectionY = positive ? (-offsetY + 200) : (offsetY + 200);
+
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+
+                // Calculate line endpoints based on rotation
+                const radians = ((90 + rotation) * Math.PI) / 180;
+                const dx = Math.cos(radians) * lineLength;
+                const dy = Math.sin(radians) * lineLength;
+
+                let x1 = intersectionX - dx;
+                let y1 = intersectionY - dy;
+                let x2 = intersectionX + dx;
+                let y2 = intersectionY + dy;
+
+                // Add a circle at the intersection point for debugging
+                const debugCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                debugCircle.setAttribute('cx', intersectionX);
+                debugCircle.setAttribute('cy', intersectionY);
+                debugCircle.setAttribute('r', '3');
+                debugCircle.setAttribute('fill', 'blue');
+                xGridContainer.appendChild(debugCircle);
+
+                // Add the i basis vector line
+                if (i === 1 && positive && !(basisX.x === 0 && basisX.y === 0)) {
+                    const iLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    iLine.setAttribute('x1', 200);
+                    iLine.setAttribute('y1', 200);
+                    iLine.setAttribute('x2', intersectionX);
+                    iLine.setAttribute('y2', intersectionY);
+                    iLine.setAttribute('stroke', 'red');
+                    iLine.setAttribute('stroke-width', '3');
+                    iLine.setAttribute('marker-end', 'url(#i-arrowhead)');
+                    yGridContainer.appendChild(iLine);
+                }
+
+                // Also cap X boundaries
+                if (x1 < 0) {
+                    const t = -intersectionX / (x1 - intersectionX);
+                    x1 = 0;
+                    y1 = intersectionY + t * (y1 - intersectionY);
+                }
+                if (x1 > svgWidth) {
+                    const t = (svgWidth - intersectionX) / (x1 - intersectionX);
+                    x1 = svgWidth;
+                    y1 = intersectionY + t * (y1 - intersectionY);
+                }
+                if (x2 < 0) {
+                    const t = -intersectionX / (x2 - intersectionX);
+                    x2 = 0;
+                    y2 = intersectionY + t * (y2 - intersectionY);
+                }
+                if (x2 > svgWidth) {
+                    const t = (svgWidth - intersectionX) / (x2 - intersectionX);
+                    x2 = svgWidth;
+                    y2 = intersectionY + t * (y2 - intersectionY);
+                }
+
+                line.setAttribute('x1', x1);
+                line.setAttribute('y1', y1);
+                line.setAttribute('x2', x2);
+                line.setAttribute('y2', y2);
+                line.setAttribute('stroke', 'blue');
+                line.setAttribute('stroke-width', '1');
+                line.setAttribute('opacity', '0.5');
+                yGridContainer.appendChild(line);
+
+                return line;
+            }
+
+            // Generate the main Y-axis line
+            line = generateYGridLine(0);
+            line.setAttribute('stroke-width', '3'); // Make main Y-axis thicker
+            line.setAttribute('opacity', '1'); // Make main Y-axis fully opaque
+
+            // Generate lines to the left of center (x < 200)
+            const numLines = Math.floor(centerX / spacing);
+            for (let i = 1; i <= numLines; i++) {
+                generateYGridLine(i, false);
+            }
+
+            // Generate lines to the right of center (x > 200)
+            for (let i = 1; i <= numLines; i++) {
+                generateYGridLine(i);
+            }
+        }
+
+        let xRotation = 0;
+        let yRotation = 0;
+        let xScale = 1;
+        let yScale = 1;
+
+        function updateGridTransforms(basisX = { x: 1, y: 0 }, basisY = { x: 0, y: 1 }) {
+            // Update grid spacing based on scale values
+            const baseSpacing = 20;
+            generateXGridLines(baseSpacing, rotation = xRotation, basisY = basisY); //, parseFloat(xRotation));
+            generateYGridLines(baseSpacing, rotation = parseFloat(yRotation), basisX = basisX); //, parseFloat(yRotation));
+            updateTransformedVectorDrawing();
+        }
+
+        function updateTransformedVectorDrawing() {
+            // Get matrix values
+            const a11 = parseFloat(a11Input.value) || 0;
+            const a12 = parseFloat(a12Input.value) || 0;
+            const a21 = parseFloat(a21Input.value) || 0;
+            const a22 = parseFloat(a22Input.value) || 0;
+
+            const v1 = parseFloat(v1Input.value) || 0;
+            const v2 = parseFloat(v2Input.value) || 0;
+
+
+            const scale = 20;
+            const centerX = 200;
+            const centerY = 200;
+
+
+            // Arrowhead length (from refX value in marker)
+            const arrowheadLength = 3;
+
+            // Minimum vector length to show arrowhead (prevents flipping at small values)
+            const minVectorLength = 5;
+
+
+            // Calculate transformed vector Av = [a11*v1 + a12*v2, a21*v1 + a22*v2]
+            const av1 = a11 * v1 + a12 * v2;
+            const av2 = a21 * v1 + a22 * v2;
+
+            // Convert transformed vector components to screen coordinates
+            const avEndX = centerX + (av1 * scale);
+            const avEndY = centerY - (av2 * scale); // Negative because SVG Y increases downward
+
+            // Calculate transformed vector length
+            const avVectorLength = Math.sqrt((avEndX - centerX) ** 2 + (avEndY - centerY) ** 2);
+
+            // Calculate where the transformed vector line should end
+            let avLineEndX, avLineEndY;
+
+            if (avVectorLength > minVectorLength) {
+                // Unit vector in the direction of the transformed vector
+                const avUnitX = (avEndX - centerX) / avVectorLength;
+                const avUnitY = (avEndY - centerY) / avVectorLength;
+
+                // Stop the line at the base of the arrowhead
+                avLineEndX = avEndX - (arrowheadLength * avUnitX);
+                avLineEndY = avEndY - (arrowheadLength * avUnitY);
+
+                // Show the arrowhead
+                avVectorLine.setAttribute('marker-end', 'url(#av-arrowhead)');
+            } else {
+                // For very small transformed vectors, don't adjust for arrowhead and hide it
+                avLineEndX = avEndX;
+                avLineEndY = avEndY;
+
+                // Hide the arrowhead for very small transformed vectors
+                avVectorLine.setAttribute('marker-end', 'none');
+            }
+
+            // Update transformed vector line
+            avVectorLine.setAttribute('x2', avLineEndX);
+            avVectorLine.setAttribute('y2', avLineEndY);
+
+            // Update transformed vector label position (at midpoint of transformed vector)
+            const avLabelX = centerX + (av1 * scale * 0.5);
+            const avLabelY = centerY - (av2 * scale * 0.5) - 15; // Offset up more to avoid overlap with v label
+            avVectorLabel.setAttribute('x', avLabelX);
+            avVectorLabel.setAttribute('y', avLabelY);
+        }
+
+        function updateVectorDrawing() {
+            const v1 = parseFloat(v1Input.value) || 0;
+            const v2 = parseFloat(v2Input.value) || 0;
+
+            // Convert vector components to screen coordinates
+            // Scale: 1 unit = 20 pixels
+            const scale = 20;
+            const centerX = 200;
+            const centerY = 200;
+
+            const endX = centerX + (v1 * scale);
+            const endY = centerY - (v2 * scale); // Negative because SVG Y increases downward
+
+            // Calculate vector length and direction
+            const vectorLength = Math.sqrt((endX - centerX) ** 2 + (endY - centerY) ** 2);
+
+            // Arrowhead length (from refX value in marker)
+            const arrowheadLength = 3;
+
+            // Minimum vector length to show arrowhead (prevents flipping at small values)
+            const minVectorLength = 5;
+
+            // Calculate where the line should end (at the base of the arrowhead)
+            let lineEndX, lineEndY;
+
+            if (vectorLength > minVectorLength) {
+                // Unit vector in the direction of the vector
+                const unitX = (endX - centerX) / vectorLength;
+                const unitY = (endY - centerY) / vectorLength;
+
+                // Stop the line at the base of the arrowhead
+                lineEndX = endX - (arrowheadLength * unitX);
+                lineEndY = endY - (arrowheadLength * unitY);
+
+                // Show the arrowhead
+                vectorLine.setAttribute('marker-end', 'url(#arrowhead)');
+            } else {
+                // For very small vectors, don't adjust for arrowhead and hide it
+                lineEndX = endX;
+                lineEndY = endY;
+
+                // Hide the arrowhead for very small vectors
+                vectorLine.setAttribute('marker-end', 'none');
+            }
+
+            // Update vector line (ends at base of arrowhead)
+            vectorLine.setAttribute('x2', lineEndX);
+            vectorLine.setAttribute('y2', lineEndY);
+
+            // Update vector label position (at midpoint of vector)
+            const labelX = centerX + (v1 * scale * 0.5);
+            const labelY = centerY - (v2 * scale * 0.5) - 5; // Offset up slightly
+            vectorLabel.setAttribute('x', labelX);
+            vectorLabel.setAttribute('y', labelY);
+
+            // Update transformed vector Av
+            updateTransformedVectorDrawing(v1, v2, scale, centerX, centerY, minVectorLength, arrowheadLength);
+        }
+
+        function calculateMatrixFromTransforms() {
+            // Convert rotation angles from degrees to radians
+            const thetaX = (xRotation * Math.PI) / 180;
+            const thetaY = (yRotation * Math.PI) / 180;
+
+            // Determine quadrant adjustments
+            const a11Sign = (xRotation >= 90 && xRotation < 270) ? -1 : 1;
+            const a22Sign = (yRotation >= 90 && yRotation < 270) ? -1 : 1;
+
+            // Calculate matrix elements based on rotation and scale
+            const a11 = a11Sign * xScale;
+            const a21 = -Math.tan(thetaX) * a11;
+            const a22 = a22Sign * yScale;
+            const a12 = Math.tan(thetaY) * a22;
+
+            return {
+                a11: a11,
+                a12: a12,
+                a21: a21,
+                a22: a22
+            };
+        }
+
+        function updateMatrixInputsFromTransforms() {
+            const matrix = calculateMatrixFromTransforms();
+
+            // Update input fields
+            a11Input.value = matrix.a11.toFixed(2);
+            a12Input.value = matrix.a12.toFixed(2);
+            a21Input.value = matrix.a21.toFixed(2);
+            a22Input.value = matrix.a22.toFixed(2);
+
+            // Update slider values and displays
+            a11Slider.value = matrix.a11.toFixed(2);
+            a12Slider.value = matrix.a12.toFixed(2);
+            a21Slider.value = matrix.a21.toFixed(2);
+            a22Slider.value = matrix.a22.toFixed(2);
+
+            a11Value.textContent = matrix.a11.toFixed(1);
+            a12Value.textContent = matrix.a12.toFixed(1);
+            a21Value.textContent = matrix.a21.toFixed(1);
+            a22Value.textContent = matrix.a22.toFixed(1);
+        }
+
+        function calculateMatrixTransformation() {
+            // Get matrix values
+            const a11 = parseFloat(a11Input.value) || 0;
+            const a12 = parseFloat(a12Input.value) || 0;
+            const a21 = parseFloat(a21Input.value) || 0;
+            const a22 = parseFloat(a22Input.value) || 0;
+
+            // Calculate determinant
+            const det = a11 * a22 - a12 * a21;
+
+            // Extract basis vectors
+            const { basisX, basisY } = extractBasisVectors();
+
+            // Calculate rotation angles in degrees
+            let rotationX = -Math.atan2(basisX.y, basisX.x) * (180 / Math.PI);
+            let rotationY = Math.atan2(basisY.x, basisY.y) * (180 / Math.PI);
+
+            // Normalize angles to 0-360 range
+            if (rotationX < 0) rotationX += 360;
+            if (rotationY < 0) rotationY += 360;
+
+            const result = {
+                basisX: basisX,
+                basisY: basisY,
+                rotationX: rotationX,
+                rotationY: rotationY,
+                determinant: det
+            };
+            // console.log('Matrix Transformation:', result);
+
+            return result;
+        }
+
+        function applyMatrixTransformation() {
+            const transform = calculateMatrixTransformation();
+
+            // Update the grid transforms
+            xRotation = transform.rotationX;
+            yRotation = transform.rotationY;
+            basisX = transform.basisX;
+            basisY = transform.basisY;
+            xScale = basisX.x;
+            yScale = basisY.y;
+
+            // Update sliders to reflect the calculated values
+            xRotationSlider.value = xRotation;
+            yRotationSlider.value = yRotation;
+            xScaleSlider.value = Math.min(3, Math.max(0.1, xScale)); // Clamp to slider range
+            yScaleSlider.value = Math.min(3, Math.max(0.1, yScale)); // Clamp to slider range
+
+            // Update display values
+            xValueSpan.textContent = `${xRotation.toFixed(1)}°`;
+            yValueSpan.textContent = `${yRotation.toFixed(1)}°`;
+            xScaleValueSpan.textContent = xScale.toFixed(1);
+            yScaleValueSpan.textContent = yScale.toFixed(1);
+
+            // Apply the transformations to the grids
+            updateGridTransforms(basisX = basisX, basisY = basisY);
+        }
+
+        // Add event listeners to matrix inputs to trigger transformation
+        function addMatrixTransformationListeners() {
+            [a11Input, a12Input, a21Input, a22Input].forEach(input => {
+                input.addEventListener('input', applyMatrixTransformation);
+            });
+
+            [a11Slider, a12Slider, a21Slider, a22Slider].forEach(slider => {
+                slider.addEventListener('input', applyMatrixTransformation);
+            });
+        }
+    </script>
+
+    <!-- Add event listenters -->
+    <script>
+
+        xRotationSlider.addEventListener('input', function () {
+            xRotation = this.value;
+            xValueSpan.textContent = `${xRotation}°`;
+            updateMatrixInputsFromTransforms();
+            ({ basisX, basisY } = extractBasisVectors());
+            updateGridTransforms(basisX, basisY);
+        });
+
+        yRotationSlider.addEventListener('input', function () {
+            yRotation = this.value;
+            yValueSpan.textContent = `${yRotation}°`;
+            updateMatrixInputsFromTransforms();
+            ({ basisX, basisY } = extractBasisVectors());
+            updateGridTransforms(basisX, basisY);
+        });
+
+        xScaleSlider.addEventListener('input', function () {
+            xScale = parseFloat(this.value);
+            xScaleValueSpan.textContent = xScale.toFixed(1);
+            updateMatrixInputsFromTransforms();
+            ({ basisX, basisY } = extractBasisVectors());
+            updateGridTransforms(basisX, basisY);
+        });
+
+        yScaleSlider.addEventListener('input', function () {
+            yScale = parseFloat(this.value);
+            yScaleValueSpan.textContent = yScale.toFixed(1);
+            updateMatrixInputsFromTransforms();
+            ({ basisX, basisY } = extractBasisVectors());
+            updateGridTransforms(basisX, basisY);
+        });
+
+        // Matrix slider event listeners - update input fields when sliders change
+        a11Slider.addEventListener('input', function () {
+            const value = parseFloat(this.value);
+            a11Input.value = value;
+            a11Value.textContent = value.toFixed(1);
+        });
+
+        a12Slider.addEventListener('input', function () {
+            const value = parseFloat(this.value);
+            a12Input.value = value;
+            a12Value.textContent = value.toFixed(1);
+        });
+
+        a21Slider.addEventListener('input', function () {
+            const value = parseFloat(this.value);
+            a21Input.value = value;
+            a21Value.textContent = value.toFixed(1);
+        });
+
+        a22Slider.addEventListener('input', function () {
+            const value = parseFloat(this.value);
+            a22Input.value = value;
+            a22Value.textContent = value.toFixed(1);
+        });
+
+        // Input field event listeners - update sliders when input fields change
+        a11Input.addEventListener('input', function () {
+            const value = parseFloat(this.value) || 0;
+            if (value >= -3 && value <= 3) {
+                a11Slider.value = value;
+                a11Value.textContent = value.toFixed(1);
+            }
+        });
+
+        a12Input.addEventListener('input', function () {
+            const value = parseFloat(this.value) || 0;
+            if (value >= -3 && value <= 3) {
+                a12Slider.value = value;
+                a12Value.textContent = value.toFixed(1);
+            }
+        });
+
+        a21Input.addEventListener('input', function () {
+            const value = parseFloat(this.value) || 0;
+            if (value >= -3 && value <= 3) {
+                a21Slider.value = value;
+                a21Value.textContent = value.toFixed(1);
+            }
+        });
+
+        a22Input.addEventListener('input', function () {
+            const value = parseFloat(this.value) || 0;
+            if (value >= -3 && value <= 3) {
+                a22Slider.value = value;
+                a22Value.textContent = value.toFixed(1);
+            }
+        });
+
+        // Vector slider event listeners - update input fields when sliders change
+        v1Slider.addEventListener('input', function () {
+            const value = parseFloat(this.value);
+            v1Input.value = value;
+            v1Value.textContent = value.toFixed(1);
+            updateVectorDrawing();
+        });
+
+        v2Slider.addEventListener('input', function () {
+            const value = parseFloat(this.value);
+            v2Input.value = value;
+            v2Value.textContent = value.toFixed(1);
+            updateVectorDrawing();
+        });
+
+        // Input field event listeners - update sliders when input fields change
+        v1Input.addEventListener('input', function () {
+            const value = parseFloat(this.value) || 0;
+            if (value >= -3 && value <= 3) {
+                v1Slider.value = value;
+                v1Value.textContent = value.toFixed(1);
+            }
+            updateVectorDrawing();
+        });
+
+        v2Input.addEventListener('input', function () {
+            const value = parseFloat(this.value) || 0;
+            if (value >= -3 && value <= 3) {
+                v2Slider.value = value;
+                v2Value.textContent = value.toFixed(1);
+            }
+            updateVectorDrawing();
+        });
+
+        addMatrixTransformationListeners();
+    </script>
+
+    <!-- Call functions -->
+    <script>
+        generateXGridLines();
+        generateYGridLines();
+
+        // Initialize vector drawing
+        updateVectorDrawing();
+
+        // Initialize matrix transformation
+        applyMatrixTransformation();
+    </script>
+</body>
+
+</html>
