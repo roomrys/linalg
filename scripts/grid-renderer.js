@@ -226,7 +226,8 @@ export class GridRenderer {
      * @returns {object} - The clipped (x, y) coordinates.
      */
 
-    ({ x, y } = this._clipYBoundaries(x, y, intersectionX, intersectionY));
+    // FIXME: Incorrect grid lines when apply both x and y clipping, e.x. A = [[3, 3], [-1, 1]].
+    // ({ x, y } = this._clipYBoundaries(x, y, intersectionX, intersectionY));
     ({ x, y } = this._clipXBoundaries(x, y, intersectionX, intersectionY));
     return { x, y };
   }
