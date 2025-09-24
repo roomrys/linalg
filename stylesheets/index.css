@@ -2,4 +2,102 @@ body {
     width: 100vw;
     height: 100vh;
     margin: 0;
+    overflow: hidden;
+}
+
+.controls {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 10px;
+    border-radius: 5px;
+    z-index: 1;
+}
+
+.matrix-sliders, .scale-sliders {
+    margin: 10px 0;
+    border-top: 1px solid #ccc;
+    padding-top: 10px;
+}
+
+.matrix-slider, .vector-slider {
+    margin: 5px 0;
+}
+
+.matrix-control {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+#matrix-a-label, #vector-v-label {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.matrix-control #left-bracket, .matrix-control #right-bracket {
+    flex-shrink: 0;
+}
+
+.matrix-inputs {
+    display: grid;
+    grid-template-columns: 50px 50px;
+    gap: 8px;
+    margin: 0 4px;
+}
+
+.matrix-inputs input {
+    width: 45px;
+    height: 22px;
+    padding: 2px;
+    text-align: center;
+    border: 1px solid #ccc;
+}
+
+.vector-sliders {
+    margin: 10px 0;
+    border-top: 1px solid #ccc;
+    padding-top: 10px;
+}
+
+.vector-control {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 15px;
+}
+
+#vector-v-label {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.vector-control #left-bracket-vector, 
+.vector-control #right-bracket-vector {
+    flex-shrink: 0;
+}
+
+.vector-inputs {
+    display: grid;
+    grid-template-rows: 22px 22px;
+    gap: 8px;
+    margin: 0 4px;
+}
+
+.vector-inputs input {
+    width: 45px;
+    height: 22px;
+    padding: 2px;
+    text-align: center;
+    border: 1px solid #ccc;
+}
+
+.main-svg {
+    position: relative;
+}
+
+/* Add this new rule for the grid background */
+.grid-background {
+    pointer-events: all;
 }
