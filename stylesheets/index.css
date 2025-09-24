@@ -1,5 +1,160 @@
+/* ===== LAYOUT & CONTAINER STYLES ===== */
 body {
     width: 100vw;
     height: 100vh;
     margin: 0;
+    overflow: hidden;
 }
+
+.controls {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 10px;
+    border-radius: 5px;
+    z-index: 1;
+}
+
+/* All direct child divs in controls (except first) get section styling */
+.controls > div:not(:first-child) {
+    margin: 10px 0;
+    border-top: 1px solid #ccc;
+    padding-top: 10px;
+}
+
+/* All divs containing "slider" in class name (individual sliders) */
+[class*="slider"]:not([class*="sliders"]) {
+    margin: 5px 0;
+}
+
+/* All control containers (matrix-control, vector-control) */
+[class$="-control"] {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.vector-control {
+    margin-top: 15px; /* Additional style for vector control */
+}
+
+/* All labels ending with "-label" */
+[id$="-label"] {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+/* All SVGs containing "bracket" in their ID */
+[id*="bracket"] {
+    flex-shrink: 0;
+    width: 8px;
+    height: 60px;
+}
+
+/* All input containers ending with "-inputs" */
+[class$="-inputs"] {
+    display: grid;
+    gap: 8px;
+    margin: 0 4px;
+}
+
+.matrix-inputs {
+    grid-template-columns: 50px 50px;
+}
+
+.vector-inputs {
+    grid-template-rows: 22px 22px;
+}
+
+/* All inputs inside input containers */
+[class$="-inputs"] input {
+    width: 45px;
+    height: 22px;
+    padding: 2px;
+    text-align: center;
+    border: 1px solid #ccc;
+}
+
+/* ===== SVG STYLES ===== */
+.main-svg {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+}
+
+/* ===== GRID STYLES ===== */
+.grid-background {
+    pointer-events: all;
+    fill: url(#grid-pattern);
+    opacity: 0.3;
+}
+
+/* All elements with class ending in "-path" */
+[class$="-path"] {
+    fill: none;
+}
+
+.grid-pattern-path {
+    stroke: #999999;
+    stroke-width: 1;
+}
+
+.bracket-path {
+    stroke: black;
+    stroke-width: 2;
+}
+
+/* Axis lines */
+.axis-line {
+    stroke: #999999;
+    stroke-width: 3;
+}
+
+/* Center point */
+.center-point {
+    fill: black;
+}
+
+/* ===== VECTOR STYLES ===== */
+/* All elements with ID containing "vector-line" */
+[id*="vector-line"] {
+    stroke-width: 3;
+}
+
+#vector-line {
+    stroke: green;
+    marker-end: url(#arrowhead);
+}
+
+#av-vector-line {
+    stroke: purple;
+    marker-end: url(#av-arrowhead);
+}
+
+/* All elements with ID containing "vector-label" */
+[id*="vector-label"] {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+#vector-label {
+    fill: green;
+}
+
+#av-vector-label {
+    fill: purple;
+}
+
+/* ===== UTILITY CLASSES ===== */
+/* Reusable color utilities for arrowheads and other elements */
+.color-green { fill: green; stroke: green; }
+.color-red { fill: red; stroke: red; }
+.color-blue { fill: blue; stroke: blue; }
+.color-purple { fill: purple; stroke: purple; }
+
+/* Legacy support for existing arrowhead classes */
+.arrowhead-green { fill: green; }
+.arrowhead-red { fill: red; }
+.arrowhead-blue { fill: blue; }
+.arrowhead-purple { fill: purple; }

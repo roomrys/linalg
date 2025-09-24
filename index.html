@@ -12,10 +12,9 @@
     <script type="module" src="./scripts/app.js"></script>
 </head>
 
-<body style="overflow: hidden;">
+<body>
     <main>
-        <div class="controls"
-            style="position: fixed; top: 10px; left: 10px; background: rgba(255, 255, 255, 0.8); padding: 10px; border-radius: 5px; z-index: 1;">
+        <div class="controls">
             <div>
                 <label for="x-rotation">X-Axis Rotation: </label>
                 <input type="range" id="x-rotation" min="0" max="360" value="0">
@@ -27,8 +26,8 @@
                 <span id="y-value">0°</span>
             </div>
 
-            <!-- Scale controls -->
-            <div style="margin: 10px 0; border-top: 1px solid #ccc; padding-top: 10px;">
+            <!-- Scale sliders -->
+            <div>
                 <div>
                     <label for="x-scale">X-Axis Scale: </label>
                     <input type="range" id="x-scale" min="-3" max="3" value="1" step="0.1">
@@ -42,111 +41,101 @@
             </div>
 
             <!-- Matrix sliders -->
-            <div style="margin: 10px 0; border-top: 1px solid #ccc; padding-top: 10px;">
-                <div style="margin: 5px 0;">
+            <div>
+                <div class="matrix-slider">
                     <label for="a11-slider">a (top-left): </label>
                     <input type="range" id="a11-slider" min="-3" max="3" value="1" step="0.1">
                     <span id="a11-value">1.0</span>
                 </div>
-                <div style="margin: 5px 0;">
+                <div class="matrix-slider">
                     <label for="a12-slider">b (top-right): </label>
                     <input type="range" id="a12-slider" min="-3" max="3" value="0" step="0.1">
                     <span id="a12-value">0.0</span>
                 </div>
-                <div style="margin: 5px 0;">
+                <div class="matrix-slider">
                     <label for="a21-slider">c (bottom-left): </label>
                     <input type="range" id="a21-slider" min="-3" max="3" value="0" step="0.1">
                     <span id="a21-value">0.0</span>
                 </div>
-                <div style="margin: 5px 0;">
+                <div class="matrix-slider">
                     <label for="a22-slider">d (bottom-right): </label>
                     <input type="range" id="a22-slider" min="-3" max="3" value="1" step="0.1">
                     <span id="a22-value">1.0</span>
                 </div>
             </div>
 
-            <div style="display: flex; align-items: center; gap: 5px;">
-                <span style="font-size: 16px; font-weight: bold;">A = </span>
+            <!-- Matrix A control -->
+            <div class="matrix-control">
+                <span id="matrix-a-label">A=</span>
 
                 <!-- Left bracket -->
-                <svg width="8" height="60" style="flex-shrink: 0;">
-                    <path d="M 6 0 L 2 0 Q 0 0 0 2 L 0 58 Q 0 60 2 60 L 6 60" fill="none" stroke="black"
-                        stroke-width="2" />
+                <svg id="left-bracket">
+                    <path class="bracket-path" d="M 6 0 L 2 0 Q 0 0 0 2 L 0 58 Q 0 60 2 60 L 6 60" />
                 </svg>
 
                 <!-- Matrix inputs -->
-                <div style="display: grid; grid-template-columns: 50px 50px; gap: 8px; margin: 0 4px;">
-                    <input type="number" id="a11" value="1" step="0.1"
-                        style="width: 45px; height: 22px; padding: 2px; text-align: center; border: 1px solid #ccc;">
-                    <input type="number" id="a12" value="0" step="0.1"
-                        style="width: 45px; height: 22px; padding: 2px; text-align: center; border: 1px solid #ccc;">
-                    <input type="number" id="a21" value="0" step="0.1"
-                        style="width: 45px; height: 22px; padding: 2px; text-align: center; border: 1px solid #ccc;">
-                    <input type="number" id="a22" value="1" step="0.1"
-                        style="width: 45px; height: 22px; padding: 2px; text-align: center; border: 1px solid #ccc;">
+                <div class="matrix-inputs">
+                    <input type="number" id="a11" value="1" step="0.1">
+                    <input type="number" id="a12" value="0" step="0.1">
+                    <input type="number" id="a21" value="0" step="0.1">
+                    <input type="number" id="a22" value="1" step="0.1">
                 </div>
 
                 <!-- Right bracket -->
-                <svg width="8" height="60" style="flex-shrink: 0;">
-                    <path d="M 2 0 L 6 0 Q 8 0 8 2 L 8 58 Q 8 60 6 60 L 2 60" fill="none" stroke="black"
-                        stroke-width="2" />
+                <svg id="right-bracket">
+                    <path class="bracket-path" d="M 2 0 L 6 0 Q 8 0 8 2 L 8 58 Q 8 60 6 60 L 2 60" />
                 </svg>
             </div>
 
             <!-- Vector sliders -->
-            <div style="margin: 10px 0; border-top: 1px solid #ccc; padding-top: 10px;">
-                <div style="margin: 5px 0;">
+            <div>
+                <div class="vector-slider">
                     <label for="v1-slider">v₁ (x-component): </label>
                     <input type="range" id="v1-slider" min="-3" max="3" value="3" step="0.1">
                     <span id="v1-value">3.0</span>
                 </div>
-                <div style="margin: 5px 0;">
+                <div class="vector-slider">
                     <label for="v2-slider">v₂ (y-component): </label>
                     <input type="range" id="v2-slider" min="-3" max="3" value="-3" step="0.1">
                     <span id="v2-value">-3.0</span>
                 </div>
             </div>
             <!-- Vector v control -->
-            <div style="display: flex; align-items: center; gap: 5px; margin-top: 15px;">
-                <span style="font-size: 16px; font-weight: bold;">v = </span>
+            <div class="vector-control">
+                <span id="vector-v-label">v = </span>
 
                 <!-- Left bracket -->
-                <svg width="8" height="60" style="flex-shrink: 0;">
-                    <path d="M 6 0 L 2 0 Q 0 0 0 2 L 0 58 Q 0 60 2 60 L 6 60" fill="none" stroke="black"
-                        stroke-width="2" />
+                <svg id="left-bracket-vector">
+                    <path class="bracket-path" d="M 6 0 L 2 0 Q 0 0 0 2 L 0 58 Q 0 60 2 60 L 6 60" />
                 </svg>
 
                 <!-- Vector inputs -->
-                <div style="display: grid; grid-template-rows: 22px 22px; gap: 8px; margin: 0 4px;">
-                    <input type="number" id="v1" value="3" step="0.1"
-                        style="width: 45px; height: 22px; padding: 2px; text-align: center; border: 1px solid #ccc;">
-                    <input type="number" id="v2" value="-3" step="0.1"
-                        style="width: 45px; height: 22px; padding: 2px; text-align: center; border: 1px solid #ccc;">
+                <div class="vector-inputs">
+                    <input type="number" id="v1" value="3" step="0.1">
+                    <input type="number" id="v2" value="-3" step="0.1">
                 </div>
 
                 <!-- Right bracket -->
-                <svg width="8" height="60" style="flex-shrink: 0;">
-                    <path d="M 2 0 L 6 0 Q 8 0 8 2 L 8 58 Q 8 60 6 60 L 2 60" fill="none" stroke="black"
-                        stroke-width="2" />
+                <svg id="right-bracket-vector">
+                    <path class="bracket-path" d="M 2 0 L 6 0 Q 8 0 8 2 L 8 58 Q 8 60 6 60 L 2 60" />
                 </svg>
             </div>
         </div>
-        </div>
 
-        <svg width="100vw" height="100vh" viewBox="0 0 400 400" style="position: relative;">
+        <svg viewBox="0 0 400 400" class="main-svg">
             <defs>
                 <pattern id="grid-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
-                    <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#999999" stroke-width="1" />
+                    <path class="grid-pattern-path" d="M 20 0 L 0 0 0 20" />
                 </pattern>
             </defs>
 
             <!-- Grid background -->
-            <rect width="100%" height="100%" fill="url(#grid-pattern)" opacity="0.3" style="pointer-events: all;" />
-            <line x1="200" y1="0" x2="200" y2="400" stroke="#999999" stroke-width="3" />
-            <line x1="0" y1="200" x2="400" y2="200" stroke="#999999" stroke-width="3" />
+            <rect class="grid-background" width="100%" height="100%" />
+            <line class="axis-line" x1="200" y1="0" x2="200" y2="400" />
+            <line class="axis-line" x1="0" y1="200" x2="400" y2="200" />
 
             <!-- Center point -->
-            <circle cx="200" cy="200" r="3" fill="black" />
+            <circle class="center-point" cx="200" cy="200" r="3" />
 
             <!-- X-axis grid lines -->
             <g id="x-grid" transform="rotate(0, 200, 200)">
@@ -164,35 +153,33 @@
             <!-- Vector arrows -->
             <defs>
                 <marker id="arrowhead" markerWidth="4" markerHeight="4" refX="3" refY="2" orient="auto">
-                    <polygon points="0 0, 4 2, 0 4" fill="green" />
+                    <polygon class="arrowhead-green" points="0 0, 4 2, 0 4" />
                 </marker>
 
                 <!-- Arrowhead for i vector (red) -->
                 <marker id="i-arrowhead" markerWidth="4" markerHeight="4" refX="3" refY="2" orient="auto">
-                    <polygon points="0 0, 4 2, 0 4" fill="red" />
+                    <polygon class="arrowhead-red" points="0 0, 4 2, 0 4" />
                 </marker>
 
                 <!-- Arrowhead for j vector (blue) -->
                 <marker id="j-arrowhead" markerWidth="4" markerHeight="4" refX="3" refY="2" orient="auto">
-                    <polygon points="0 0, 4 2, 0 4" fill="blue" />
+                    <polygon class="arrowhead-blue" points="0 0, 4 2, 0 4" />
                 </marker>
 
                 <!-- Arrowhead for transformed vector Av (purple) -->
                 <marker id="av-arrowhead" markerWidth="4" markerHeight="4" refX="3" refY="2" orient="auto">
-                    <polygon points="0 0, 4 2, 0 4" fill="purple" />
+                    <polygon class="arrowhead-purple" points="0 0, 4 2, 0 4" />
                 </marker>
             </defs>
 
-            <line id="vector-line" x1="200" y1="200" x2="260" y2="260" stroke="green" stroke-width="3"
-                marker-end="url(#arrowhead)" />
+            <line id="vector-line" x1="200" y1="200" x2="260" y2="260" />
 
             <!-- Transformed vector Av -->
-            <line id="av-vector-line" x1="200" y1="200" x2="260" y2="260" stroke="purple" stroke-width="3"
-                marker-end="url(#av-arrowhead)" />
+            <line id="av-vector-line" x1="200" y1="200" x2="260" y2="260" />
 
             <!-- Vector labels -->
-            <text id="vector-label" x="210" y="190" fill="green" font-size="14" font-weight="bold">v</text>
-            <text id="av-vector-label" x="210" y="190" fill="purple" font-size="14" font-weight="bold">Av</text>
+            <text id="vector-label" x="210" y="190">v</text>
+            <text id="av-vector-label" x="210" y="190">Av</text>
 
         </svg>
     </main>
