@@ -16,24 +16,20 @@ body {
     z-index: 1;
 }
 
-/* Consolidated: Control sections with borders */
-.matrix-sliders, 
-.scale-sliders, 
-.vector-sliders {
+/* All direct child divs in controls (except first) get section styling */
+.controls > div:not(:first-child) {
     margin: 10px 0;
     border-top: 1px solid #ccc;
     padding-top: 10px;
 }
 
-/* Consolidated: Individual slider containers */
-.matrix-slider, 
-.vector-slider {
+/* All divs containing "slider" in class name (individual sliders) */
+[class*="slider"]:not([class*="sliders"]) {
     margin: 5px 0;
 }
 
-/* Consolidated: Control containers with flex layout */
-.matrix-control, 
-.vector-control {
+/* All control containers (matrix-control, vector-control) */
+[class$="-control"] {
     display: flex;
     align-items: center;
     gap: 5px;
@@ -43,30 +39,21 @@ body {
     margin-top: 15px; /* Additional style for vector control */
 }
 
-/* Consolidated: Control labels */
-#matrix-a-label, 
-#vector-v-label {
+/* All labels ending with "-label" */
+[id$="-label"] {
     font-size: 16px;
     font-weight: bold;
 }
 
-/* Consolidated: All bracket SVGs */
-.matrix-control #left-bracket, 
-.matrix-control #right-bracket,
-.vector-control #left-bracket-vector, 
-.vector-control #right-bracket-vector,
-#left-bracket,
-#right-bracket,
-#left-bracket-vector,
-#right-bracket-vector {
+/* All SVGs containing "bracket" in their ID */
+[id*="bracket"] {
     flex-shrink: 0;
     width: 8px;
     height: 60px;
 }
 
-/* Consolidated: Input grids base styles */
-.matrix-inputs,
-.vector-inputs {
+/* All input containers ending with "-inputs" */
+[class$="-inputs"] {
     display: grid;
     gap: 8px;
     margin: 0 4px;
@@ -80,9 +67,8 @@ body {
     grid-template-rows: 22px 22px;
 }
 
-/* Consolidated: All input fields */
-.matrix-inputs input,
-.vector-inputs input {
+/* All inputs inside input containers */
+[class$="-inputs"] input {
     width: 45px;
     height: 22px;
     padding: 2px;
@@ -104,9 +90,8 @@ body {
     opacity: 0.3;
 }
 
-/* Consolidated: Elements with no fill */
-.grid-pattern-path,
-.bracket-path {
+/* All elements with class ending in "-path" */
+[class$="-path"] {
     fill: none;
 }
 
@@ -132,9 +117,8 @@ body {
 }
 
 /* ===== VECTOR STYLES ===== */
-/* Consolidated: Vector lines base styles */
-#vector-line,
-#av-vector-line {
+/* All elements with ID containing "vector-line" */
+[id*="vector-line"] {
     stroke-width: 3;
 }
 
@@ -148,9 +132,8 @@ body {
     marker-end: url(#av-arrowhead);
 }
 
-/* Consolidated: Vector labels base styles */
-#vector-label,
-#av-vector-label {
+/* All elements with ID containing "vector-label" */
+[id*="vector-label"] {
     font-size: 14px;
     font-weight: bold;
 }
@@ -163,8 +146,14 @@ body {
     fill: purple;
 }
 
-/* ===== COLOR UTILITIES ===== */
-/* Consolidated: All arrowhead colors */
+/* ===== UTILITY CLASSES ===== */
+/* Reusable color utilities for arrowheads and other elements */
+.color-green { fill: green; stroke: green; }
+.color-red { fill: red; stroke: red; }
+.color-blue { fill: blue; stroke: blue; }
+.color-purple { fill: purple; stroke: purple; }
+
+/* Legacy support for existing arrowhead classes */
 .arrowhead-green { fill: green; }
 .arrowhead-red { fill: red; }
 .arrowhead-blue { fill: blue; }
