@@ -7,6 +7,8 @@ This project focuses on implementing and exploring concepts in linear algebra. T
 ## Features
 
 - Change of basis visualizer
+  <img width="1475" height="879" alt="image" src="https://github.com/user-attachments/assets/e1ffea80-5c9e-4e6f-8cfa-2bf8a108b264" />
+
 
 ## Development
 
