@@ -69,9 +69,8 @@
                 <span id="matrix-a-label">A=</span>
 
                 <!-- Left bracket -->
-                <svg width="8" height="60" id="left-bracket">
-                    <path d="M 6 0 L 2 0 Q 0 0 0 2 L 0 58 Q 0 60 2 60 L 6 60" fill="none" stroke="black"
-                        stroke-width="2" />
+                <svg id="left-bracket">
+                    <path class="bracket-path" d="M 6 0 L 2 0 Q 0 0 0 2 L 0 58 Q 0 60 2 60 L 6 60" />
                 </svg>
 
                 <!-- Matrix inputs -->
@@ -83,9 +82,8 @@
                 </div>
 
                 <!-- Right bracket -->
-                <svg width="8" height="60" id="right-bracket">
-                    <path d="M 2 0 L 6 0 Q 8 0 8 2 L 8 58 Q 8 60 6 60 L 2 60" fill="none" stroke="black"
-                        stroke-width="2" />
+                <svg id="right-bracket">
+                    <path class="bracket-path" d="M 2 0 L 6 0 Q 8 0 8 2 L 8 58 Q 8 60 6 60 L 2 60" />
                 </svg>
             </div>
 
@@ -107,9 +105,8 @@
                 <span id="vector-v-label">v = </span>
 
                 <!-- Left bracket -->
-                <svg width="8" height="60" id="left-bracket-vector">
-                    <path d="M 6 0 L 2 0 Q 0 0 0 2 L 0 58 Q 0 60 2 60 L 6 60" fill="none" stroke="black"
-                        stroke-width="2" />
+                <svg id="left-bracket-vector">
+                    <path class="bracket-path" d="M 6 0 L 2 0 Q 0 0 0 2 L 0 58 Q 0 60 2 60 L 6 60" />
                 </svg>
 
                 <!-- Vector inputs -->
@@ -119,27 +116,26 @@
                 </div>
 
                 <!-- Right bracket -->
-                <svg width="8" height="60" id="right-bracket-vector">
-                    <path d="M 2 0 L 6 0 Q 8 0 8 2 L 8 58 Q 8 60 6 60 L 2 60" fill="none" stroke="black"
-                        stroke-width="2" />
+                <svg id="right-bracket-vector">
+                    <path class="bracket-path" d="M 2 0 L 6 0 Q 8 0 8 2 L 8 58 Q 8 60 6 60 L 2 60" />
                 </svg>
             </div>
         </div>
 
-        <svg width="100vw" height="100vh" viewBox="0 0 400 400" class="main-svg">
+        <svg viewBox="0 0 400 400" class="main-svg">
             <defs>
                 <pattern id="grid-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
-                    <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#999999" stroke-width="1" />
+                    <path class="grid-pattern-path" d="M 20 0 L 0 0 0 20" />
                 </pattern>
             </defs>
 
             <!-- Grid background -->
-            <rect class="grid-background" width="100%" height="100%" fill="url(#grid-pattern)" opacity="0.3" />
-            <line x1="200" y1="0" x2="200" y2="400" stroke="#999999" stroke-width="3" />
-            <line x1="0" y1="200" x2="400" y2="200" stroke="#999999" stroke-width="3" />
+            <rect class="grid-background" width="100%" height="100%" />
+            <line class="axis-line" x1="200" y1="0" x2="200" y2="400" />
+            <line class="axis-line" x1="0" y1="200" x2="400" y2="200" />
 
             <!-- Center point -->
-            <circle cx="200" cy="200" r="3" fill="black" />
+            <circle class="center-point" cx="200" cy="200" r="3" />
 
             <!-- X-axis grid lines -->
             <g id="x-grid" transform="rotate(0, 200, 200)">
@@ -157,35 +153,33 @@
             <!-- Vector arrows -->
             <defs>
                 <marker id="arrowhead" markerWidth="4" markerHeight="4" refX="3" refY="2" orient="auto">
-                    <polygon points="0 0, 4 2, 0 4" fill="green" />
+                    <polygon class="arrowhead-green" points="0 0, 4 2, 0 4" />
                 </marker>
 
                 <!-- Arrowhead for i vector (red) -->
                 <marker id="i-arrowhead" markerWidth="4" markerHeight="4" refX="3" refY="2" orient="auto">
-                    <polygon points="0 0, 4 2, 0 4" fill="red" />
+                    <polygon class="arrowhead-red" points="0 0, 4 2, 0 4" />
                 </marker>
 
                 <!-- Arrowhead for j vector (blue) -->
                 <marker id="j-arrowhead" markerWidth="4" markerHeight="4" refX="3" refY="2" orient="auto">
-                    <polygon points="0 0, 4 2, 0 4" fill="blue" />
+                    <polygon class="arrowhead-blue" points="0 0, 4 2, 0 4" />
                 </marker>
 
                 <!-- Arrowhead for transformed vector Av (purple) -->
                 <marker id="av-arrowhead" markerWidth="4" markerHeight="4" refX="3" refY="2" orient="auto">
-                    <polygon points="0 0, 4 2, 0 4" fill="purple" />
+                    <polygon class="arrowhead-purple" points="0 0, 4 2, 0 4" />
                 </marker>
             </defs>
 
-            <line id="vector-line" x1="200" y1="200" x2="260" y2="260" stroke="green" stroke-width="3"
-                marker-end="url(#arrowhead)" />
+            <line id="vector-line" x1="200" y1="200" x2="260" y2="260" />
 
             <!-- Transformed vector Av -->
-            <line id="av-vector-line" x1="200" y1="200" x2="260" y2="260" stroke="purple" stroke-width="3"
-                marker-end="url(#av-arrowhead)" />
+            <line id="av-vector-line" x1="200" y1="200" x2="260" y2="260" />
 
             <!-- Vector labels -->
-            <text id="vector-label" x="210" y="190" fill="green" font-size="14" font-weight="bold">v</text>
-            <text id="av-vector-label" x="210" y="190" fill="purple" font-size="14" font-weight="bold">Av</text>
+            <text id="vector-label" x="210" y="190">v</text>
+            <text id="av-vector-label" x="210" y="190">Av</text>
 
         </svg>
     </main>

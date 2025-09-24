@@ -95,9 +95,92 @@ body {
 
 .main-svg {
     position: relative;
+    width: 100vw;
+    height: 100vh;
 }
 
-/* Add this new rule for the grid background */
+/* Bracket SVGs sizing */
+#left-bracket,
+#right-bracket,
+#left-bracket-vector,
+#right-bracket-vector {
+    width: 8px;
+    height: 60px;
+}
+
+/* Grid background */
 .grid-background {
     pointer-events: all;
+    fill: url(#grid-pattern);
+    opacity: 0.3;
+}
+
+/* Grid pattern styling */
+.grid-pattern-path {
+    fill: none;
+    stroke: #999999;
+    stroke-width: 1;
+}
+
+/* Axis lines */
+.axis-line {
+    stroke: #999999;
+    stroke-width: 3;
+}
+
+/* Center point */
+.center-point {
+    fill: black;
+}
+
+/* Bracket paths */
+.bracket-path {
+    fill: none;
+    stroke: black;
+    stroke-width: 2;
+}
+
+/* Vector lines */
+#vector-line {
+    stroke: green;
+    stroke-width: 3;
+    marker-end: url(#arrowhead);
+}
+
+#av-vector-line {
+    stroke: purple;
+    stroke-width: 3;
+    marker-end: url(#av-arrowhead);
+}
+
+/* Vector labels */
+#vector-label,
+#av-vector-label {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+#vector-label {
+    fill: green;
+}
+
+#av-vector-label {
+    fill: purple;
+}
+
+/* Arrowhead styling */
+.arrowhead-green {
+    fill: green;
+}
+
+.arrowhead-red {
+    fill: red;
+}
+
+.arrowhead-blue {
+    fill: blue;
+}
+
+.arrowhead-purple {
+    fill: purple;
 }
