@@ -147,10 +147,10 @@ export class UIController {
     this.dom.elements.matrix.inputs[matrixElement].value = value.toFixed(1);
 
     // Apply the matrix transformation
-    const a11 = parseFloat(this.dom.elements.matrix.sliders.a11.value);
-    const a12 = parseFloat(this.dom.elements.matrix.sliders.a12.value);
-    const a21 = parseFloat(this.dom.elements.matrix.sliders.a21.value);
-    const a22 = parseFloat(this.dom.elements.matrix.sliders.a22.value);
+    const a11 = parseFloat(this.dom.elements.matrix.inputs.a11.value);
+    const a12 = parseFloat(this.dom.elements.matrix.inputs.a12.value);
+    const a21 = parseFloat(this.dom.elements.matrix.inputs.a21.value);
+    const a22 = parseFloat(this.dom.elements.matrix.inputs.a22.value);
     this.applyMatrixTransformation(a11, a12, a21, a22);
   }
 
