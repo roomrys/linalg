@@ -216,16 +216,15 @@ export class MatrixMath {
     const theta = Math.atan2(imagValue, realValue);
 
     // Calculate coefficients for the initial vector
-    imagVector.x *= -1;
-    imagVector.y *= -1;
-    const det = realVector.x * imagVector.y - realVector.y * imagVector.x;
+    const det = -realVector.x * imagVector.y + realVector.y * imagVector.x;
     if (Math.abs(det) < 1e-10) {
       throw new Error(
         "Real and imaginary eigenvectors are linearly dependent."
       );
     }
     const alpha =
-      (initial_vector.x * imagVector.y - initial_vector.y * imagVector.x) / det;
+      (-initial_vector.x * imagVector.y + initial_vector.y * imagVector.x) /
+      det;
     const beta =
       (-initial_vector.x * realVector.y + initial_vector.y * realVector.x) /
       det;
@@ -246,8 +245,8 @@ export class MatrixMath {
       const coeffW = -(alpha * sin_term + beta * cos_term);
 
       // Combine to get position at time t
-      x = exp_r * (coeffU * realVector.x - coeffW * imagVector.x);
-      y = exp_r * (coeffU * realVector.y - coeffW * imagVector.y);
+      x = exp_r * (coeffU * realVector.x + coeffW * imagVector.x);
+      y = exp_r * (coeffU * realVector.y + coeffW * imagVector.y);
 
       points.push({ x, y });
     }
