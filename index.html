@@ -170,6 +170,11 @@
                 <marker id="av-arrowhead" markerWidth="4" markerHeight="4" refX="3" refY="2" orient="auto">
                     <polygon class="arrowhead-purple" points="0 0, 4 2, 0 4" />
                 </marker>
+
+                <!-- Arrowhead for eigen vectors (orange) -->
+                <marker id="eigen-arrowhead" markerWidth="4" markerHeight="4" refX="3" refY="2" orient="auto">
+                    <polygon class="arrowhead-orange" points="0 0, 4 2, 0 4" />
+                </marker>
             </defs>
 
             <line id="vector-line" x1="200" y1="200" x2="260" y2="260" />
@@ -177,9 +182,15 @@
             <!-- Transformed vector Av -->
             <line id="av-vector-line" x1="200" y1="200" x2="260" y2="260" />
 
+            <!-- Eigen vectors -->
+            <line id="eigen-1-vector-line" x1="200" y1="200" x2="260" y2="260" />
+            <line id="eigen-2-vector-line" x1="200" y1="200" x2="140" y2="260" />
+
             <!-- Vector labels -->
             <text id="vector-label" x="210" y="190">v</text>
             <text id="av-vector-label" x="210" y="190">Av</text>
+            <text id="eigen-1-vector-label" x="270" y="270">e₁</text>
+            <text id="eigen-2-vector-label" x="150" y="270">e₂</text>
 
         </svg>
     </main>
