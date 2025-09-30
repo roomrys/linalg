@@ -195,35 +195,15 @@ export class UIController {
     this.vectorRenderer.updateVectorDrawing(true);
 
     // Calculate the eigenvectors
-    const {
-      defective,
-      eigenvalue1,
-      eigenvalue2,
-      eigenvector1,
-      eigenvector2,
-      complex,
-      realValue,
-      imagValue,
-      realVector,
-      imagVector,
-    } = MatrixMath.calculateEigenvectors(
+    this.vectorRenderer.eigenData = MatrixMath.calculateEigenvectors(
       basisX.x,
       basisY.x,
       basisX.y,
       basisY.y
     );
-    this.vectorRenderer.updateEigenvectorDrawings(
-      defective,
-      eigenvalue1,
-      eigenvalue2,
-      eigenvector1,
-      eigenvector2,
-      complex,
-      realValue,
-      imagValue,
-      realVector,
-      imagVector
-    );
+    this.vectorRenderer.updateEigenvectorDrawings({
+      ...this.vectorRenderer.eigenData,
+    });
   }
 
   updateMatrixInputsFromTransforms(rotationX, rotationY, scaleX, scaleY) {

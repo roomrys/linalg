@@ -23,9 +23,16 @@ export class VectorRenderer {
     this.v = vectorElements;
     this.Av = avVectorElements;
     this.matrix = matrixElements;
+
+    this.eigenData = MatrixMath.calculateEigenvectors(
+      parseFloat(this.matrix.inputs.a11.value) || 0,
+      parseFloat(this.matrix.inputs.a12.value) || 0,
+      parseFloat(this.matrix.inputs.a21.value) || 0,
+      parseFloat(this.matrix.inputs.a22.value) || 0
+    );
   }
 
-  updateEigenvectorDrawings(
+  updateEigenvectorDrawings({
     defective,
     eigenvalue1,
     eigenvalue2,
@@ -35,8 +42,8 @@ export class VectorRenderer {
     realValue,
     imagValue,
     realVector,
-    imagVector
-  ) {
+    imagVector,
+  }) {
     /**
      * Updates the drawing of the eigenvectors.
      * @param {number} eigenvalue1 - The first eigenvalue.
@@ -182,33 +189,9 @@ export class VectorRenderer {
       line = this.Av.line;
       label = this.Av.label;
 
-      // TODO: Store eigenvectors in class state to avoid recalculating unnecessarily
       // Also update the eigenvector drawings based on new matrix
-      const {
-        defective,
-        eigenvalue1,
-        eigenvalue2,
-        eigenvector1,
-        eigenvector2,
-        complex,
-        realValue,
-        imagValue,
-        realVector,
-        imagVector,
-      } = MatrixMath.calculateEigenvectors(a11, a12, a21, a22);
-      if (complex) {
-        this.updateEigenvectorDrawings(
-          defective,
-          eigenvalue1,
-          eigenvalue2,
-          eigenvector1,
-          eigenvector2,
-          complex,
-          realValue,
-          imagValue,
-          realVector,
-          imagVector
-        );
+      if (this.eigenData.complex) {
+        this.updateEigenvectorDrawings({ ...this.eigenData });
       }
     } else {
       markerEnd = "url(#arrowhead)";
