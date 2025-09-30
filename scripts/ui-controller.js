@@ -171,6 +171,19 @@ export class UIController {
     this.vectorRenderer.updateVectorDrawing();
   }
 
+  updateVector({ v1, v2 }) {
+    this.dom.elements.vectors.v.inputs.v1.value = v1;
+    this.dom.elements.vectors.v.inputs.v2.value = v2;
+
+    this.dom.elements.vectors.v.sliders.v1.value = v1;
+    this.dom.elements.vectors.v.sliders.v2.value = v2;
+
+    this.dom.elements.vectors.v.values.v1.textContent = v1.toFixed(1);
+    this.dom.elements.vectors.v.values.v2.textContent = v2.toFixed(1);
+
+    this.vectorRenderer.updateVectorDrawing();
+  }
+
   updateGridTransforms(
     rotationX = 0,
     rotationY = 0,
@@ -180,6 +193,17 @@ export class UIController {
     this.gridRenderer.generateXGridLines(rotationX, basisY);
     this.gridRenderer.generateYGridLines(rotationY, basisX);
     this.vectorRenderer.updateVectorDrawing(true);
+
+    // Calculate the eigenvectors
+    this.vectorRenderer.eigenData = MatrixMath.calculateEigenvectors(
+      basisX.x,
+      basisY.x,
+      basisX.y,
+      basisY.y
+    );
+    this.vectorRenderer.updateEigenvectorDrawings({
+      ...this.vectorRenderer.eigenData,
+    });
   }
 
   updateMatrixInputsFromTransforms(rotationX, rotationY, scaleX, scaleY) {
@@ -191,24 +215,31 @@ export class UIController {
     );
 
     // Update input fields
-    this.dom.elements.matrix.inputs.a11.value = matrix.a11.toFixed(2);
-    this.dom.elements.matrix.inputs.a12.value = matrix.a12.toFixed(2);
-    this.dom.elements.matrix.inputs.a21.value = matrix.a21.toFixed(2);
-    this.dom.elements.matrix.inputs.a22.value = matrix.a22.toFixed(2);
-
-    // Update slider values
-    this.dom.elements.matrix.sliders.a11.value = matrix.a11.toFixed(2);
-    this.dom.elements.matrix.sliders.a12.value = matrix.a12.toFixed(2);
-    this.dom.elements.matrix.sliders.a21.value = matrix.a21.toFixed(2);
-    this.dom.elements.matrix.sliders.a22.value = matrix.a22.toFixed(2);
-
-    // Update displayed values
-    this.dom.elements.matrix.values.a11.textContent = matrix.a11.toFixed(1);
-    this.dom.elements.matrix.values.a12.textContent = matrix.a12.toFixed(1);
-    this.dom.elements.matrix.values.a21.textContent = matrix.a21.toFixed(1);
-    this.dom.elements.matrix.values.a22.textContent = matrix.a22.toFixed(1);
+    this.updateMatrix(matrix, false);
 
     return matrix;
+  }
+
+  updateMatrix({ a11, a12, a21, a22 }, propagate = true) {
+    this.dom.elements.matrix.inputs.a11.value = a11.toFixed(2);
+    this.dom.elements.matrix.inputs.a12.value = a12.toFixed(2);
+    this.dom.elements.matrix.inputs.a21.value = a21.toFixed(2);
+    this.dom.elements.matrix.inputs.a22.value = a22.toFixed(2);
+
+    this.dom.elements.matrix.sliders.a11.value = a11.toFixed(2);
+    this.dom.elements.matrix.sliders.a12.value = a12.toFixed(2);
+    this.dom.elements.matrix.sliders.a21.value = a21.toFixed(2);
+    this.dom.elements.matrix.sliders.a22.value = a22.toFixed(2);
+
+    this.dom.elements.matrix.values.a11.textContent = a11.toFixed(1);
+    this.dom.elements.matrix.values.a12.textContent = a12.toFixed(1);
+    this.dom.elements.matrix.values.a21.textContent = a21.toFixed(1);
+    this.dom.elements.matrix.values.a22.textContent = a22.toFixed(1);
+
+    // Also updates other elements if propagate is true.
+    if (propagate) {
+      this.applyMatrixTransformation(a11, a12, a21, a22);
+    }
   }
 
   applyMatrixTransformation(a11, a12, a21, a22) {

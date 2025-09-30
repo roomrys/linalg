@@ -135,6 +135,11 @@ body {
     marker-end: url(#av-arrowhead);
 }
 
+#eigen-1-vector-line, #eigen-2-vector-line {
+    stroke: orange;
+    marker-end: url(#eigen-arrowhead);
+}
+
 /* All elements with ID containing "vector-label" */
 [id*="vector-label"] {
     font-size: 14px;
@@ -149,15 +154,21 @@ body {
     fill: purple;
 }
 
+#eigen-1-vector-label, #eigen-2-vector-label {
+    fill: orange;
+}
+
 /* ===== UTILITY CLASSES ===== */
 /* Reusable color utilities for arrowheads and other elements */
 .color-green { fill: green; stroke: green; }
 .color-red { fill: red; stroke: red; }
 .color-blue { fill: blue; stroke: blue; }
 .color-purple { fill: purple; stroke: purple; }
+.color-orange { fill: orange; stroke: orange; }
 
 /* Legacy support for existing arrowhead classes */
 .arrowhead-green { fill: green; }
 .arrowhead-red { fill: red; }
 .arrowhead-blue { fill: blue; }
 .arrowhead-purple { fill: purple; }
+.arrowhead-orange { fill: orange; }

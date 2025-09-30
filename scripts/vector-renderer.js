@@ -1,4 +1,5 @@
 import { CONFIG } from "./constants.js";
+import { MatrixMath } from "./matrix-math.js";
 
 export class VectorRenderer {
   /**
@@ -22,6 +23,146 @@ export class VectorRenderer {
     this.v = vectorElements;
     this.Av = avVectorElements;
     this.matrix = matrixElements;
+
+    this.eigenData = MatrixMath.calculateEigenvectors(
+      parseFloat(this.matrix.inputs.a11.value) || 0,
+      parseFloat(this.matrix.inputs.a12.value) || 0,
+      parseFloat(this.matrix.inputs.a21.value) || 0,
+      parseFloat(this.matrix.inputs.a22.value) || 0
+    );
+  }
+
+  updateEigenvectorDrawings({
+    defective,
+    eigenvalue1,
+    eigenvalue2,
+    eigenvector1,
+    eigenvector2,
+    complex,
+    realValue,
+    imagValue,
+    realVector,
+    imagVector,
+  }) {
+    /**
+     * Updates the drawing of the eigenvectors.
+     * @param {number} eigenvalue1 - The first eigenvalue.
+     * @param {number} eigenvalue2 - The second eigenvalue.
+     * @param {Object} eigenvector1 - The first eigenvector with x and y components.
+     * @param {Object} eigenvector2 - The second eigenvector with x and y components.
+     * @param {boolean} complex - Whether the eigenvalues are complex.
+     * @param {number} realValue - The real part of the eigenvalue (for complex case).
+     * @param {number} imagValue - The imaginary part of the eigenvalue (for complex case).
+     * @param {Object} realVector - The real part of the eigenvector (for complex case).
+     * @param {Object} imagVector - The imaginary part of the eigenvector (for complex case).
+     * @returns {void}
+     */
+    const markerEnd = "url(#eigen-arrowhead)";
+    const eigen1Label = document.getElementById("eigen-1-vector-label");
+
+    // Remove any existing trajectory
+    const existingTrajectory = document.getElementById("complex-trajectory");
+    if (existingTrajectory) {
+      existingTrajectory.remove();
+    }
+
+    // Check if complex eigenvalues
+    if (complex) {
+      const points = [];
+
+      // Reset eigen-1 label
+      eigen1Label.innerHTML = `e<tspan baseline-shift="sub" font-size="0.8em">1</tspan>`;
+
+      // Hide eigenvector lines
+      document
+        .getElementById("eigen-1-vector-line")
+        .setAttribute("display", "none");
+      document
+        .getElementById("eigen-2-vector-line")
+        .setAttribute("display", "none");
+      document
+        .getElementById("eigen-2-vector-label")
+        .setAttribute("display", "none");
+
+      // Calculate trajectory points
+      MatrixMath.calculateDiscreteTrajectory(
+        realValue,
+        imagValue,
+        realVector,
+        imagVector,
+        { x: this.v.inputs.v1.value, y: this.v.inputs.v2.value }
+      ).forEach((point) => {
+        const screenX = this.centerX + point.x * this.scale;
+        const screenY = this.centerY - point.y * this.scale; // Negative because SVG Y increases downward
+
+        points.push(`${screenX},${screenY}`);
+      });
+
+      // Draw trajectory
+      const polyline = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "polyline"
+      );
+      polyline.setAttribute("id", "complex-trajectory");
+      polyline.setAttribute("points", points.join(" "));
+      polyline.setAttribute("fill", "none");
+      polyline.setAttribute("stroke", "orange");
+      polyline.setAttribute("stroke-width", "2");
+      polyline.setAttribute("opacity", "0.8");
+
+      this.v.line.parentNode.appendChild(polyline);
+
+      // Move eigen-1 label starting point to end of trajectory
+      const lastPoint = points[parseInt(points.length / 4)].split(",");
+      const labelX = parseFloat(lastPoint[0]);
+      const labelY = parseFloat(lastPoint[1]) - 5; // Offset up slightly
+      eigen1Label.setAttribute("x", labelX);
+      eigen1Label.setAttribute("y", labelY);
+    } else {
+      // Always show and update eigenvector 1 drawing
+      this._updateVectorDrawing(
+        eigenvector1.x,
+        eigenvector1.y,
+        document.getElementById("eigen-1-vector-line"),
+        document.getElementById("eigen-1-vector-label"),
+        markerEnd
+      );
+      document
+        .getElementById("eigen-1-vector-line")
+        .setAttribute("display", "block");
+
+      // Only show second eigenvector if not defective
+      if (defective) {
+        document
+          .getElementById("eigen-2-vector-line")
+          .setAttribute("display", "none");
+        document
+          .getElementById("eigen-2-vector-label")
+          .setAttribute("display", "none");
+
+        // Set eigen-1 label to denote defective case
+        eigen1Label.innerHTML = `e<tspan baseline-shift="sub" font-size="0.8em">1&2</tspan>`;
+      } else {
+        document
+          .getElementById("eigen-2-vector-line")
+          .setAttribute("display", "block");
+        document
+          .getElementById("eigen-2-vector-label")
+          .setAttribute("display", "block");
+
+        // Update eigenvector 2 drawing
+        this._updateVectorDrawing(
+          eigenvector2.x,
+          eigenvector2.y,
+          document.getElementById("eigen-2-vector-line"),
+          document.getElementById("eigen-2-vector-label"),
+          markerEnd
+        );
+
+        // Reset eigen-1 label
+        eigen1Label.innerHTML = `e<tspan baseline-shift="sub" font-size="0.8em">1</tspan>`;
+      }
+    }
   }
 
   updateVectorDrawing(transformed = false) {
@@ -47,6 +188,11 @@ export class VectorRenderer {
       markerEnd = "url(#av-arrowhead)";
       line = this.Av.line;
       label = this.Av.label;
+
+      // Also update the eigenvector drawings based on new matrix
+      if (this.eigenData.complex) {
+        this.updateEigenvectorDrawings({ ...this.eigenData });
+      }
     } else {
       markerEnd = "url(#arrowhead)";
       line = this.v.line;
