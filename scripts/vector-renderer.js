@@ -77,7 +77,8 @@ export class VectorRenderer {
         realValue,
         imagValue,
         realVector,
-        imagVector
+        imagVector,
+        { x: this.v.inputs.v1.value, y: this.v.inputs.v2.value }
       ).forEach((point) => {
         const screenX = this.centerX + point.x * this.scale;
         const screenY = this.centerY - point.y * this.scale; // Negative because SVG Y increases downward
@@ -133,6 +134,33 @@ export class VectorRenderer {
       markerEnd = "url(#av-arrowhead)";
       line = this.Av.line;
       label = this.Av.label;
+
+      // TODO: Store eigenvectors in class state to avoid recalculating unnecessarily
+      // Also update the eigenvector drawings based on new matrix
+      const {
+        eigenvalue1,
+        eigenvalue2,
+        eigenvector1,
+        eigenvector2,
+        complex,
+        realValue,
+        imagValue,
+        realVector,
+        imagVector,
+      } = MatrixMath.calculateEigenvectors(a11, a12, a21, a22);
+      if (complex) {
+        this.updateEigenvectorDrawings(
+          eigenvalue1,
+          eigenvalue2,
+          eigenvector1,
+          eigenvector2,
+          complex,
+          realValue,
+          imagValue,
+          realVector,
+          imagVector
+        );
+      }
     } else {
       markerEnd = "url(#arrowhead)";
       line = this.v.line;

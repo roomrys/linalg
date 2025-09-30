@@ -197,7 +197,8 @@ export class MatrixMath {
     realValue,
     imagValue,
     realVector,
-    imagVector
+    imagVector,
+    initial_vector = { x: 1, y: 0 }
   ) {
     /**
      * Compute smooth trajectory for a discrete-time linear system x_{k+1} = A x_k.
@@ -212,6 +213,21 @@ export class MatrixMath {
     const magnitude = Math.sqrt(realValue * realValue + imagValue * imagValue);
     const theta = Math.atan2(imagValue, realValue);
 
+    // Calculate coefficients for the initial vector
+    imagVector.x *= -1;
+    imagVector.y *= -1;
+    const det = realVector.x * imagVector.y - realVector.y * imagVector.x;
+    if (Math.abs(det) < 1e-10) {
+      throw new Error(
+        "Real and imaginary eigenvectors are linearly dependent."
+      );
+    }
+    const alpha =
+      (initial_vector.x * imagVector.y - initial_vector.y * imagVector.x) / det;
+    const beta =
+      (-initial_vector.x * realVector.y + initial_vector.y * realVector.x) /
+      det;
+
     const points = [];
     const numPoints = 100;
     const timeRange = (2 * Math.PI) / theta; // Time from 0 to one full rotation (adjust to see more/less of spiral)
@@ -223,8 +239,13 @@ export class MatrixMath {
       const cos_term = Math.cos(theta * t);
       const sin_term = Math.sin(theta * t);
 
-      x = exp_r * (cos_term * realVector.x - sin_term * imagVector.x);
-      y = exp_r * (cos_term * realVector.y - sin_term * imagVector.y);
+      // Calculate coefficients for U and W
+      const coeffU = alpha * cos_term - beta * sin_term;
+      const coeffW = -(alpha * sin_term + beta * cos_term);
+
+      // Combine to get position at time t
+      x = exp_r * (coeffU * realVector.x - coeffW * imagVector.x);
+      y = exp_r * (coeffU * realVector.y - coeffW * imagVector.y);
 
       points.push({ x, y });
     }
