@@ -172,3 +172,26 @@ body {
 .arrowhead-blue { fill: blue; }
 .arrowhead-purple { fill: purple; }
 .arrowhead-orange { fill: orange; }
+
+/* ===== HOMEPAGE LINK ===== */
+.github-link {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    text-decoration: none;
+}
+
+.github-link img {
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+}
+
+.github-link:hover img {
+    opacity: 1;
+}
