@@ -96,6 +96,7 @@ export class MatrixMath {
     // Return eigenvectors and eigenvalues for real cases.
     let eigenvalue1, eigenvalue2;
     let eigenvector1, eigenvector2;
+    let defective = discriminant === 0;
 
     // For complex eigenvalues, return the real and imaginary parts separately for a
     // single eigenvalue/vector pair (complex conjugate).
@@ -140,6 +141,7 @@ export class MatrixMath {
     }
 
     const result = {
+      defective: defective,
       eigenvalue1: eigenvalue1,
       eigenvalue2: eigenvalue2,
       eigenvector1: eigenvector1,

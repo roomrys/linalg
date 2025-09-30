@@ -26,6 +26,7 @@ export class VectorRenderer {
   }
 
   updateEigenvectorDrawings(
+    defective,
     eigenvalue1,
     eigenvalue2,
     eigenvector1,
@@ -50,6 +51,7 @@ export class VectorRenderer {
      * @returns {void}
      */
     const markerEnd = "url(#eigen-arrowhead)";
+    const eigen1Label = document.getElementById("eigen-1-vector-label");
 
     // Remove any existing trajectory
     const existingTrajectory = document.getElementById("complex-trajectory");
@@ -60,6 +62,9 @@ export class VectorRenderer {
     // Check if complex eigenvalues
     if (complex) {
       const points = [];
+
+      // Reset eigen-1 label
+      eigen1Label.innerHTML = `e<tspan baseline-shift="sub" font-size="0.8em">1</tspan>`;
 
       // Hide eigenvector lines
       document
@@ -82,6 +87,7 @@ export class VectorRenderer {
       ).forEach((point) => {
         const screenX = this.centerX + point.x * this.scale;
         const screenY = this.centerY - point.y * this.scale; // Negative because SVG Y increases downward
+
         points.push(`${screenX},${screenY}`);
       });
 
@@ -103,11 +109,52 @@ export class VectorRenderer {
       const lastPoint = points[parseInt(points.length / 4)].split(",");
       const labelX = parseFloat(lastPoint[0]);
       const labelY = parseFloat(lastPoint[1]) - 5; // Offset up slightly
-      const eigen1Label = document.getElementById("eigen-1-vector-label");
       eigen1Label.setAttribute("x", labelX);
       eigen1Label.setAttribute("y", labelY);
     } else {
-      // Show eigenvector lines
+      // Always show and update eigenvector 1 drawing
+      this._updateVectorDrawing(
+        eigenvector1.x,
+        eigenvector1.y,
+        document.getElementById("eigen-1-vector-line"),
+        document.getElementById("eigen-1-vector-label"),
+        markerEnd
+      );
+      document
+        .getElementById("eigen-1-vector-line")
+        .setAttribute("display", "block");
+
+      // Only show second eigenvector if not defective
+      if (defective) {
+        document
+          .getElementById("eigen-2-vector-line")
+          .setAttribute("display", "none");
+        document
+          .getElementById("eigen-2-vector-label")
+          .setAttribute("display", "none");
+
+        // Set eigen-1 label to denote defective case
+        eigen1Label.innerHTML = `e<tspan baseline-shift="sub" font-size="0.8em">1&2</tspan>`;
+      } else {
+        document
+          .getElementById("eigen-2-vector-line")
+          .setAttribute("display", "block");
+        document
+          .getElementById("eigen-2-vector-label")
+          .setAttribute("display", "block");
+
+        // Update eigenvector 2 drawing
+        this._updateVectorDrawing(
+          eigenvector2.x,
+          eigenvector2.y,
+          document.getElementById("eigen-2-vector-line"),
+          document.getElementById("eigen-2-vector-label"),
+          markerEnd
+        );
+
+        // Reset eigen-1 label
+        eigen1Label.innerHTML = `e<tspan baseline-shift="sub" font-size="0.8em">1</tspan>`;
+      }
     }
   }
 
@@ -138,6 +185,7 @@ export class VectorRenderer {
       // TODO: Store eigenvectors in class state to avoid recalculating unnecessarily
       // Also update the eigenvector drawings based on new matrix
       const {
+        defective,
         eigenvalue1,
         eigenvalue2,
         eigenvector1,
@@ -150,6 +198,7 @@ export class VectorRenderer {
       } = MatrixMath.calculateEigenvectors(a11, a12, a21, a22);
       if (complex) {
         this.updateEigenvectorDrawings(
+          defective,
           eigenvalue1,
           eigenvalue2,
           eigenvector1,

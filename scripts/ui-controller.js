@@ -196,6 +196,7 @@ export class UIController {
 
     // Calculate the eigenvectors
     const {
+      defective,
       eigenvalue1,
       eigenvalue2,
       eigenvector1,
@@ -212,6 +213,7 @@ export class UIController {
       basisY.y
     );
     this.vectorRenderer.updateEigenvectorDrawings(
+      defective,
       eigenvalue1,
       eigenvalue2,
       eigenvector1,
