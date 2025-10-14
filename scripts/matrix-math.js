@@ -96,7 +96,7 @@ export class MatrixMath {
     // Return eigenvectors and eigenvalues for real cases.
     let eigenvalue1, eigenvalue2;
     let eigenvector1, eigenvector2;
-    let defective = discriminant === 0;
+    let defective = discriminant === 0; // True if eigenvectors are linearly dependent.
 
     // For complex eigenvalues, return the real and imaginary parts separately for a
     // single eigenvalue/vector pair (complex conjugate).
@@ -137,6 +137,7 @@ export class MatrixMath {
         eigenvalue2 = a22;
         eigenvector1 = { x: 1, y: 0 };
         eigenvector2 = { x: 0, y: 1 };
+        defective = false;
       }
     }
 
