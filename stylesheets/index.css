@@ -195,3 +195,16 @@ body {
 .github-link:hover img {
     opacity: 1;
 }
+
+/* Add to your index.css */
+/* Hide elements until app initializes */
+.main-svg,
+.controls {
+  display: none;
+}
+
+/* Show elements when app is initialized */
+.app-initialized .main-svg,
+.app-initialized .controls {
+  display: block;
+}

@@ -25,9 +25,15 @@ class LinearAlgebraApp {
   }
 
   initialize() {
-    this.gridRenderer.generateXGridLines();
-    this.gridRenderer.generateYGridLines();
-    this.vectorRenderer.updateVectorDrawing();
+    this.uiController.updateMatrix({ a11: 2, a12: 0, a21: 0, a22: 1 });
+
+    // Show the interface after initialization
+    document.body.classList.add("app-initialized");
+
+    // Force update vector positions after elements are shown
+    setTimeout(() => {
+      this.vectorRenderer.updateVectorDrawing();
+    }, 10); // Small delay to ensure CSS changes are applied
   }
 }
 
