@@ -58,25 +58,20 @@
             background: white;
             transition: background-color 0.2s;
             font-weight: 500;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
         }
 
-        .matrix-cell.clickable:hover {
-            background-color: #e3f2fd;
+        .matrix-cell.data-cell {
             cursor: pointer;
+            transition: all 0.2s ease;
         }
 
-        .matrix-cell.row-header {
-            background-color: #2196f3;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .matrix-cell.col-header {
-            background-color: #4caf50;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
+        .matrix-cell.data-cell:hover {
+            background-color: rgba(33, 150, 243, 0.1);
+            transform: scale(1.02);
         }
 
         .controls {
@@ -125,7 +120,6 @@
         .legend-color {
             width: 20px;
             height: 15px;
-            border: 1px solid #ccc;
         }
 
         .matrix-cell.highlight-row {
@@ -143,9 +137,9 @@
 <body>
     <div class="info">
         <h2>Correlation Matrix Explorer</h2>
-        <p><strong>Instructions:</strong> Click on row headers (blue) to randomize entire rows, or column headers
-            (green) to randomize entire columns of matrix X. Watch how this affects the correlation structures in XX'
-            and X'X!</p>
+        <p><strong>Instructions:</strong> Click any cell in matrix X to randomize that column. Hold <kbd
+                style="background:#f0f0f0; padding:2px 6px; border-radius:3px; font-family:monospace;">Shift</kbd> +
+            click to randomize that row instead. Watch how this affects the correlation structures!</p>
         <div class="color-legend">
             <div class="legend-item">
                 <div class="legend-color" style="background-color: #1a237e;"></div>
@@ -285,17 +279,6 @@
                 const row = document.createElement('div');
                 row.className = 'matrix-row';
 
-                if (isDataMatrix) {
-                    // Add row header for data matrix
-                    const rowHeader = document.createElement('div');
-                    rowHeader.className = 'matrix-cell row-header';
-                    rowHeader.textContent = `R${i + 1}`;
-                    rowHeader.onclick = () => randomizeRow(i);
-                    rowHeader.onmouseenter = () => highlightRow(i);
-                    rowHeader.onmouseleave = () => clearHighlights();
-                    row.appendChild(rowHeader);
-                }
-
                 for (let j = 0; j < matrix[i].length; j++) {
                     const cell = document.createElement('div');
                     cell.className = 'matrix-cell';
@@ -307,25 +290,22 @@
                     cell.style.backgroundColor = backgroundColor;
                     cell.style.color = textColor;
 
-                    if (isDataMatrix && i === 0) {
-                        // Add column headers for first row of data matrix
-                        const colHeader = document.createElement('div');
-                        colHeader.className = 'matrix-cell col-header';
-                        colHeader.textContent = `C${j + 1}`;
-                        colHeader.onclick = () => randomizeColumn(j);
-                        colHeader.onmouseenter = () => highlightColumn(j);
-                        colHeader.onmouseleave = () => clearHighlights();
-
-                        const headerRow = container.querySelector('.matrix-row') || document.createElement('div');
-                        if (!container.querySelector('.matrix-row')) {
-                            headerRow.className = 'matrix-row';
-                            const emptyCorner = document.createElement('div');
-                            emptyCorner.className = 'matrix-cell';
-                            emptyCorner.style.backgroundColor = '#666';
-                            headerRow.appendChild(emptyCorner);
-                            container.appendChild(headerRow);
-                        }
-                        headerRow.appendChild(colHeader);
+                    // Add interaction for data matrix cells
+                    if (isDataMatrix) {
+                        cell.classList.add('data-cell');
+                        cell.onclick = (event) => handleCellClick(i, j, event.shiftKey);
+                        cell.onmouseenter = (event) => {
+                            currentHoveredCell = { rowIndex: i, colIndex: j };
+                            if (isShiftHeld) {
+                                highlightRow(i);
+                            } else {
+                                highlightColumn(j);
+                            }
+                        };
+                        cell.onmouseleave = () => {
+                            currentHoveredCell = null;
+                            clearHighlights();
+                        };
                     }
 
                     row.appendChild(cell);
@@ -367,12 +347,10 @@
             const xMatrix = document.getElementById('xMatrix');
             const rows = xMatrix.querySelectorAll('.matrix-row');
 
-            if (rows[rowIndex + 1]) { // +1 because first row is headers
-                const cells = rows[rowIndex + 1].querySelectorAll('.matrix-cell');
+            if (rows[rowIndex]) {
+                const cells = rows[rowIndex].querySelectorAll('.matrix-cell');
                 cells.forEach(cell => {
-                    if (!cell.classList.contains('row-header')) {
-                        cell.classList.add('highlight-row');
-                    }
+                    cell.classList.add('highlight-row');
                 });
             }
 
@@ -405,9 +383,8 @@
 
             rows.forEach((row, rowIdx) => {
                 const cells = row.querySelectorAll('.matrix-cell');
-                // +1 to account for row header
-                if (cells[colIndex + 1] && !cells[colIndex + 1].classList.contains('col-header')) {
-                    cells[colIndex + 1].classList.add('highlight-col');
+                if (cells[colIndex]) {
+                    cells[colIndex].classList.add('highlight-col');
                 }
             });
 
@@ -436,6 +413,42 @@
                 cell.classList.remove('highlight-row', 'highlight-col');
             });
         }
+
+        function handleCellClick(rowIndex, colIndex, isShiftPressed) {
+            if (isShiftPressed) {
+                randomizeRow(rowIndex);
+            } else {
+                randomizeColumn(colIndex);
+            }
+        }
+
+        // Track shift key state for hover effects
+        let isShiftHeld = false;
+        let currentHoveredCell = null;
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Shift' && !isShiftHeld) {
+                isShiftHeld = true;
+                // If we're currently hovering over a cell, update the highlight immediately
+                if (currentHoveredCell) {
+                    const { rowIndex, colIndex } = currentHoveredCell;
+                    highlightRow(rowIndex);
+                }
+            }
+        });
+
+        document.addEventListener('keyup', (event) => {
+            if (event.key === 'Shift') {
+                isShiftHeld = false;
+                // If we're currently hovering over a cell, update the highlight immediately
+                if (currentHoveredCell) {
+                    const { rowIndex, colIndex } = currentHoveredCell;
+                    highlightColumn(colIndex);
+                } else {
+                    clearHighlights();
+                }
+            }
+        });
 
         function generateNewMatrix() {
             generateRandomMatrix();
