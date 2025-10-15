@@ -334,7 +334,7 @@
                 for (let j = 0; j < matrix[i].length; j++) {
                     const cell = document.createElement('div');
                     cell.className = 'matrix-cell';
-                    cell.textContent = matrix[i][j].toFixed(2);
+                    cell.textContent = ''; //matrix[i][j].toFixed(2);
 
                     // Apply color coding
                     const backgroundColor = getColorForValue(matrix[i][j]);
