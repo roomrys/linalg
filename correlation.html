@@ -71,7 +71,6 @@
 
         .matrix-cell.data-cell:hover {
             background-color: rgba(33, 150, 243, 0.1);
-            transform: scale(1.02);
         }
 
         .controls {
@@ -123,12 +122,12 @@
         }
 
         .matrix-cell.highlight-row {
-            box-shadow: inset 0 0 0 3px rgba(33, 150, 243, 0.6);
+            box-shadow: inset 0 0 0 3px rgba(76, 175, 80, 0.8);
             transform: scale(1.05);
         }
 
         .matrix-cell.highlight-col {
-            box-shadow: inset 0 0 0 3px rgba(76, 175, 80, 0.6);
+            box-shadow: inset 0 0 0 3px rgba(76, 175, 80, 0.8);
             transform: scale(1.05);
         }
     </style>
@@ -142,15 +141,15 @@
             click to randomize that row instead. Watch how this affects the correlation structures!</p>
         <div class="color-legend">
             <div class="legend-item">
-                <div class="legend-color" style="background-color: #1a237e;"></div>
+                <div class="legend-color" style="background-color: #1976d2;"></div>
                 <span>Strong Negative</span>
             </div>
             <div class="legend-item">
-                <div class="legend-color" style="background-color: #ffffff;"></div>
+                <div class="legend-color" style="background-color: #ffffff; border: 1px solid #ccc;"></div>
                 <span>Neutral</span>
             </div>
             <div class="legend-item">
-                <div class="legend-color" style="background-color: #b71c1c;"></div>
+                <div class="legend-color" style="background-color: #f57c00;"></div>
                 <span>Strong Positive</span>
             </div>
         </div>
@@ -178,6 +177,31 @@
     </div>
 
     <script>
+        // Color Configuration - Easy to change!
+        const COLOR_CONFIG = {
+            // Matrix cell colors
+            negative: {
+                name: 'Blue',
+                baseColor: [180, 200, 255], // Lighter blue
+                intensity: [0.3, 0.2, 0.4]  // Much lighter intensity [r, g, b] 
+            },
+            positive: {
+                name: 'Orange',
+                baseColor: [255, 220, 180], // Lighter orange
+                intensity: [0.1, 0.2, 0.4]  // Much lighter intensity [r, g, b]
+            },
+            // Highlight colors
+            highlight: {
+                color: 'rgba(76, 175, 80, 0.8)', // Green
+                name: 'Green'
+            },
+            // Legend colors (for display)
+            legend: {
+                strongNegative: '#1976d2', // Blue
+                strongPositive: '#f57c00'  // Orange
+            }
+        };
+
         let X = [];
         const rows = 5;
         const cols = 4;
@@ -225,19 +249,21 @@
             const normalizedValue = (clampedValue - minVal) / (maxVal - minVal) * 2 - 1;
 
             let r, g, b;
+            // Use square root to make smaller values more visible
+            const intensity = Math.sqrt(Math.abs(normalizedValue));
 
             if (normalizedValue < 0) {
-                // Blue scale for negative values
-                const intensity = Math.abs(normalizedValue);
-                r = Math.round(255 * (1 - intensity * 0.9)); // Fade to darker blue
-                g = Math.round(255 * (1 - intensity * 0.8));
-                b = 255;
+                // Use configured negative color (Blue) - interpolate from white to color
+                const config = COLOR_CONFIG.negative;
+                r = Math.round(255 - (255 - config.baseColor[0]) * intensity);
+                g = Math.round(255 - (255 - config.baseColor[1]) * intensity);
+                b = Math.round(255 - (255 - config.baseColor[2]) * intensity);
             } else {
-                // Red scale for positive values
-                const intensity = normalizedValue;
-                r = 255;
-                g = Math.round(255 * (1 - intensity * 0.8));
-                b = Math.round(255 * (1 - intensity * 0.9)); // Fade to darker red
+                // Use configured positive color (Orange) - interpolate from white to color
+                const config = COLOR_CONFIG.positive;
+                r = Math.round(255 - (255 - config.baseColor[0]) * intensity);
+                g = Math.round(255 - (255 - config.baseColor[1]) * intensity);
+                b = Math.round(255 - (255 - config.baseColor[2]) * intensity);
             }
 
             return `rgb(${r}, ${g}, ${b})`;
