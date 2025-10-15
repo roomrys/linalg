@@ -60,42 +60,89 @@ export class UIController {
     this.dom.elements.matrix.sliders.a11.addEventListener("input", (e) => {
       this.handleMatrixSliderChange(e.target, e.target.value, "a11");
     });
+    this.dom.elements.matrix.sliders.a11.addEventListener("mouseup", () => {
+      this.updateURL();
+    });
+    this.dom.elements.matrix.sliders.a11.addEventListener("touchend", () => {
+      this.updateURL();
+    });
+
     this.dom.elements.matrix.sliders.a12.addEventListener("input", (e) => {
       this.handleMatrixSliderChange(e.target, e.target.value, "a12");
     });
+    this.dom.elements.matrix.sliders.a12.addEventListener("mouseup", () => {
+      this.updateURL();
+    });
+    this.dom.elements.matrix.sliders.a12.addEventListener("touchend", () => {
+      this.updateURL();
+    });
+
     this.dom.elements.matrix.sliders.a21.addEventListener("input", (e) => {
       this.handleMatrixSliderChange(e.target, e.target.value, "a21");
     });
+    this.dom.elements.matrix.sliders.a21.addEventListener("mouseup", () => {
+      this.updateURL();
+    });
+    this.dom.elements.matrix.sliders.a21.addEventListener("touchend", () => {
+      this.updateURL();
+    });
+
     this.dom.elements.matrix.sliders.a22.addEventListener("input", (e) => {
       this.handleMatrixSliderChange(e.target, e.target.value, "a22");
+    });
+    this.dom.elements.matrix.sliders.a22.addEventListener("mouseup", () => {
+      this.updateURL();
+    });
+    this.dom.elements.matrix.sliders.a22.addEventListener("touchend", () => {
+      this.updateURL();
     });
 
     // Matrix input fields
     this.dom.elements.matrix.inputs.a11.addEventListener("change", (e) => {
       this.handleMatrixSliderChange(e.target, e.target.value, "a11");
+      this.updateURL();
     });
     this.dom.elements.matrix.inputs.a12.addEventListener("change", (e) => {
       this.handleMatrixSliderChange(e.target, e.target.value, "a12");
+      this.updateURL();
     });
     this.dom.elements.matrix.inputs.a21.addEventListener("change", (e) => {
       this.handleMatrixSliderChange(e.target, e.target.value, "a21");
+      this.updateURL();
     });
     this.dom.elements.matrix.inputs.a22.addEventListener("change", (e) => {
       this.handleMatrixSliderChange(e.target, e.target.value, "a22");
+      this.updateURL();
     });
 
     // Vector sliders and inputs
     this.dom.elements.vectors.v.sliders.v1.addEventListener("input", (e) => {
       this.handleVectorChange(e.target, e.target.value, "v1");
     });
+    this.dom.elements.vectors.v.sliders.v1.addEventListener("mouseup", () => {
+      this.updateURL();
+    });
+    this.dom.elements.vectors.v.sliders.v1.addEventListener("touchend", () => {
+      this.updateURL();
+    });
+
     this.dom.elements.vectors.v.sliders.v2.addEventListener("input", (e) => {
       this.handleVectorChange(e.target, e.target.value, "v2");
     });
+    this.dom.elements.vectors.v.sliders.v2.addEventListener("mouseup", () => {
+      this.updateURL();
+    });
+    this.dom.elements.vectors.v.sliders.v2.addEventListener("touchend", () => {
+      this.updateURL();
+    });
+
     this.dom.elements.vectors.v.inputs.v1.addEventListener("input", (e) => {
       this.handleVectorChange(e.target, e.target.value, "v1");
+      this.updateURL();
     });
     this.dom.elements.vectors.v.inputs.v2.addEventListener("input", (e) => {
       this.handleVectorChange(e.target, e.target.value, "v2");
+      this.updateURL();
     });
   }
 
@@ -197,7 +244,6 @@ export class UIController {
 
     // Update vector drawing
     this.vectorRenderer.updateVectorDrawing();
-    this.updateURL();
   }
 
   updateVector({ v1, v2 }) {
@@ -303,8 +349,6 @@ export class UIController {
     )}°`;
     this.dom.elements.scale.values.x.textContent = scaleX.toFixed(1);
     this.dom.elements.scale.values.y.textContent = scaleY.toFixed(1);
-
-    this.updateURL();
 
     // Apply the transformations to the grids
     this.updateGridTransforms(rotationX, rotationY, basisX, basisY);
