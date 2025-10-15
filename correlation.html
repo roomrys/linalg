@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Correlation Matrix Explorer</title>
+    <link rel="icon" type="image/x-icon" href="assets/correlation.svg">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px 0;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            transform: translateY(-10vh);
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .matrix-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px;
+        }
+
+        .matrix-title {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+            font-family: 'Courier New', Monaco, 'Lucida Console', monospace;
+        }
+
+        .matrix-description {
+            text-align: center;
+            font-size: 14px;
+            margin-top: 10px;
+            color: #888;
+            font-family: 'Courier New', Monaco, 'Lucida Console', monospace;
+        }
+
+        .matrix {
+            display: inline-block;
+            font-family: 'Courier New', monospace;
+        }
+
+        .matrix-row {
+            display: flex;
+        }
+
+        .matrix-cell {
+            width: 50px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            background: white;
+            /* transition: background-color 0.2s; */
+            font-weight: 500;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+
+        .matrix-cell.data-cell {
+            cursor: pointer;
+            /* transition: all 0.2s ease; */
+        }
+
+        .matrix-cell.data-cell:hover {
+            background-color: rgba(33, 150, 243, 0.1);
+        }
+
+        .matrix-cell.correlation-cell {
+            cursor: pointer;
+        }
+
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 0 10px;
+            background-color: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background-color: #1976d2;
+        }
+
+        .info {
+            background: #e8f5e8;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4caf50;
+        }
+
+        .color-legend {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+            font-size: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 15px;
+        }
+
+        .matrix-cell.highlight-row {
+            box-shadow: inset 0 0 0 3px rgba(76, 175, 80, 0.8);
+            transform: scale(1.05);
+        }
+
+        .matrix-cell.highlight-col {
+            box-shadow: inset 0 0 0 3px rgba(76, 175, 80, 0.8);
+            transform: scale(1.05);
+        }
+
+        /* Simple responsive: just stack vertically on mobile */
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .main-content {
+                transform: translateY(-5vh);
+                flex-direction: column-reverse;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div style="text-align: center; margin: 20px;">
+        <h1>Correlation Matrix Explorer</h1>
+    </div>
+
+    <div class="main-content">
+        <div class="container">
+            <div class="matrix-container">
+                <div class="matrix-title">XX<sup>T</sup></div>
+                <div id="xxTranspose" class="matrix"></div>
+                <div class="matrix-description">Row Correlation</div>
+            </div>
+
+            <div class="matrix-container">
+                <div class="matrix-title">X</div>
+                <div id="xMatrix" class="matrix"></div>
+                <div class="matrix-description">Data Matrix</div>
+            </div>
+
+            <div class="matrix-container">
+                <div class="matrix-title">X<sup>T</sup>X</div>
+                <div id="xTransposeX" class="matrix"></div>
+                <div class="matrix-description">Column Correlation</div>
+            </div>
+
+        </div>
+
+        <div style="text-align: center; margin: 30px 20px; color: #666; font-size: 14px;">
+            <p><code>Click</code> any cell in matrix X to randomize that column. Hold <code>Shift + click</code> to
+                randomize that row
+                instead.</p>
+        </div>
+    </div>
+
+    <script>
+        // Color Configuration - Easy to change!
+        const COLOR_CONFIG = {
+            // Matrix cell colors
+            negative: {
+                name: 'Blue',
+                baseColor: [50, 150, 255], // Lighter blue
+                intensity: [0.3, 0.2, 0.4]  // Much lighter intensity [r, g, b] 
+            },
+            positive: {
+                name: 'Orange',
+                baseColor: [255, 150, 50], // Lighter orange
+                intensity: [0.1, 0.2, 0.4]  // Much lighter intensity [r, g, b]
+            },
+            // Highlight colors
+            highlight: {
+                color: 'rgba(76, 175, 80, 0.8)', // Green
+                name: 'Green'
+            },
+            // Legend colors (for display)
+            legend: {
+                strongNegative: '#1976d2', // Blue
+                strongPositive: '#f57c00'  // Orange
+            }
+        };
+
+        let X = [];
+        const rows = 5;
+        const cols = 4;
+
+        function generateRandomMatrix() {
+            X = [];
+            for (let i = 0; i < rows; i++) {
+                X[i] = [];
+                for (let j = 0; j < cols; j++) {
+                    X[i][j] = (Math.random() - 0.5) * 4; // Random values between -2 and 2
+                }
+            }
+        }
+
+        function matrixMultiply(A, B) {
+            const result = [];
+            for (let i = 0; i < A.length; i++) {
+                result[i] = [];
+                for (let j = 0; j < B[0].length; j++) {
+                    result[i][j] = 0;
+                    for (let k = 0; k < B.length; k++) {
+                        result[i][j] += A[i][k] * B[k][j];
+                    }
+                }
+            }
+            return result;
+        }
+
+        function transpose(matrix) {
+            const result = [];
+            for (let j = 0; j < matrix[0].length; j++) {
+                result[j] = [];
+                for (let i = 0; i < matrix.length; i++) {
+                    result[j][i] = matrix[i][j];
+                }
+            }
+            return result;
+        }
+
+        function getColorForValue(value, minVal = -10, maxVal = 10) {
+            // Clamp value to the preset range
+            const clampedValue = Math.max(minVal, Math.min(maxVal, value));
+
+            // Normalize value to [-1, 1] range
+            const normalizedValue = (clampedValue - minVal) / (maxVal - minVal) * 2 - 1;
+
+            let r, g, b;
+            // Use power curve to make smaller values much more distinguishable
+            const intensity = Math.pow(Math.abs(normalizedValue), 0.5);
+
+            if (normalizedValue < 0) {
+                // Use configured negative color (Blue) - interpolate from white to color
+                const config = COLOR_CONFIG.negative;
+                r = Math.round(255 - (255 - config.baseColor[0]) * intensity);
+                g = Math.round(255 - (255 - config.baseColor[1]) * intensity);
+                b = Math.round(255 - (255 - config.baseColor[2]) * intensity);
+            } else {
+                // Use configured positive color (Orange) - interpolate from white to color
+                const config = COLOR_CONFIG.positive;
+                r = Math.round(255 - (255 - config.baseColor[0]) * intensity);
+                g = Math.round(255 - (255 - config.baseColor[1]) * intensity);
+                b = Math.round(255 - (255 - config.baseColor[2]) * intensity);
+            }
+
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        function getTextColorForBackground(bgColor) {
+            // Extract RGB values from rgb() string
+            const match = bgColor.match(/rgb\((\d+), (\d+), (\d+)\)/);
+            if (!match) return '#000';
+
+            const [, r, g, b] = match.map(Number);
+
+            // Calculate perceived brightness
+            const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+
+            // Return dark text for light backgrounds, light text for dark backgrounds
+            return brightness > 128 ? '#000' : '#fff';
+        }
+
+        function getMatrixValueRange(matrix) {
+            let min = Infinity;
+            let max = -Infinity;
+
+            for (let i = 0; i < matrix.length; i++) {
+                for (let j = 0; j < matrix[i].length; j++) {
+                    min = Math.min(min, matrix[i][j]);
+                    max = Math.max(max, matrix[i][j]);
+                }
+            }
+
+            return { min, max };
+        }
+
+        function renderMatrix(matrix, containerId, isDataMatrix = false) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            for (let i = 0; i < matrix.length; i++) {
+                const row = document.createElement('div');
+                row.className = 'matrix-row';
+
+                for (let j = 0; j < matrix[i].length; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'matrix-cell';
+                    cell.textContent = ''; //matrix[i][j].toFixed(2);
+
+                    // Apply color coding
+                    const backgroundColor = getColorForValue(matrix[i][j]);
+                    const textColor = getTextColorForBackground(backgroundColor);
+                    cell.style.backgroundColor = backgroundColor;
+                    cell.style.color = textColor;
+
+                    // Add interaction for data matrix cells
+                    if (isDataMatrix) {
+                        cell.classList.add('data-cell');
+                        cell.onclick = (event) => handleCellClick(i, j, event.shiftKey);
+                        cell.onmouseenter = (event) => {
+                            currentHoveredCell = { rowIndex: i, colIndex: j };
+                            if (isShiftHeld) {
+                                highlightRow(i);
+                            } else {
+                                highlightColumn(j);
+                            }
+                        };
+                        cell.onmouseleave = () => {
+                            currentHoveredCell = null;
+                            clearHighlights();
+                        };
+                    } else if (containerId === 'xxTranspose') {
+                        // Add interaction for XX' (row correlation matrix)
+                        cell.classList.add('correlation-cell');
+                        cell.onmouseenter = () => {
+                            highlightRowCorrelation(i, j);
+                        };
+                        cell.onmouseleave = () => {
+                            clearHighlights();
+                        };
+                        cell.onclick = () => {
+                            randomizeRow(i); // Randomize row i in X
+                        };
+                    } else if (containerId === 'xTransposeX') {
+                        // Add interaction for X'X (column correlation matrix)
+                        cell.classList.add('correlation-cell');
+                        cell.onmouseenter = () => {
+                            highlightColumnCorrelation(i, j);
+                        };
+                        cell.onmouseleave = () => {
+                            clearHighlights();
+                        };
+                        cell.onclick = () => {
+                            randomizeColumn(j); // Randomize column j in X
+                        };
+                    }
+
+                    row.appendChild(cell);
+                }
+
+                container.appendChild(row);
+            }
+        }
+
+        function randomizeRow(rowIndex) {
+            for (let j = 0; j < cols; j++) {
+                X[rowIndex][j] = (Math.random() - 0.5) * 4;
+            }
+            updateMatrices();
+        }
+
+        function randomizeColumn(colIndex) {
+            for (let i = 0; i < rows; i++) {
+                X[i][colIndex] = (Math.random() - 0.5) * 4;
+            }
+            updateMatrices();
+        }
+
+        function updateMatrices() {
+            const XT = transpose(X);
+            const XXT = matrixMultiply(X, XT);
+            const XTX = matrixMultiply(XT, X);
+
+            renderMatrix(XXT, 'xxTranspose');
+            renderMatrix(X, 'xMatrix', true);
+            renderMatrix(XTX, 'xTransposeX');
+        }
+
+        function highlightRow(rowIndex) {
+            // Clear all highlights first
+            clearHighlights();
+
+            // Highlight the specific row in the data matrix
+            const xMatrix = document.getElementById('xMatrix');
+            const rows = xMatrix.querySelectorAll('.matrix-row');
+
+            if (rows[rowIndex]) {
+                const cells = rows[rowIndex].querySelectorAll('.matrix-cell');
+                cells.forEach(cell => {
+                    cell.classList.add('highlight-row');
+                });
+            }
+
+            // Highlight affected row and column in XX' (sample correlation matrix)
+            const xxTranspose = document.getElementById('xxTranspose');
+            const xxRows = xxTranspose.querySelectorAll('.matrix-row');
+
+            // Highlight the entire row
+            if (xxRows[rowIndex]) {
+                const rowCells = xxRows[rowIndex].querySelectorAll('.matrix-cell');
+                rowCells.forEach(cell => cell.classList.add('highlight-row'));
+            }
+
+            // Highlight the entire column (since XX' is symmetric)
+            xxRows.forEach((row, i) => {
+                const cells = row.querySelectorAll('.matrix-cell');
+                if (cells[rowIndex]) {
+                    cells[rowIndex].classList.add('highlight-row');
+                }
+            });
+        }
+
+        function highlightColumn(colIndex) {
+            // Clear all highlights first
+            clearHighlights();
+
+            // Highlight the specific column in the data matrix
+            const xMatrix = document.getElementById('xMatrix');
+            const rows = xMatrix.querySelectorAll('.matrix-row');
+
+            rows.forEach((row, rowIdx) => {
+                const cells = row.querySelectorAll('.matrix-cell');
+                if (cells[colIndex]) {
+                    cells[colIndex].classList.add('highlight-col');
+                }
+            });
+
+            // Highlight affected row and column in X'X (feature correlation matrix)
+            const xTransposeX = document.getElementById('xTransposeX');
+            const xtxRows = xTransposeX.querySelectorAll('.matrix-row');
+
+            // Highlight the entire row
+            if (xtxRows[colIndex]) {
+                const rowCells = xtxRows[colIndex].querySelectorAll('.matrix-cell');
+                rowCells.forEach(cell => cell.classList.add('highlight-col'));
+            }
+
+            // Highlight the entire column (since X'X is symmetric)
+            xtxRows.forEach((row, i) => {
+                const cells = row.querySelectorAll('.matrix-cell');
+                if (cells[colIndex]) {
+                    cells[colIndex].classList.add('highlight-col');
+                }
+            });
+        }
+
+        function highlightRowCorrelation(rowIndex, colIndex) {
+            // Clear all highlights first
+            clearHighlights();
+
+            // Highlight the corresponding row in the data matrix X
+            const xMatrix = document.getElementById('xMatrix');
+            const xRows = xMatrix.querySelectorAll('.matrix-row');
+
+            if (xRows[rowIndex]) {
+                const cells = xRows[rowIndex].querySelectorAll('.matrix-cell');
+                cells.forEach(cell => {
+                    cell.classList.add('highlight-row');
+                });
+            }
+
+            // Highlight the row and column in XX' (since it's symmetric)
+            const xxTranspose = document.getElementById('xxTranspose');
+            const xxRows = xxTranspose.querySelectorAll('.matrix-row');
+
+            // Highlight the entire row
+            if (xxRows[rowIndex]) {
+                const rowCells = xxRows[rowIndex].querySelectorAll('.matrix-cell');
+                rowCells.forEach(cell => cell.classList.add('highlight-row'));
+            }
+
+            // Highlight the entire column (symmetric pattern)
+            xxRows.forEach((row, i) => {
+                const cells = row.querySelectorAll('.matrix-cell');
+                if (cells[rowIndex]) {
+                    cells[rowIndex].classList.add('highlight-row');
+                }
+            });
+        }
+
+        function highlightColumnCorrelation(rowIndex, colIndex) {
+            // Clear all highlights first
+            clearHighlights();
+
+            // Highlight the corresponding column in the data matrix X (use colIndex, not rowIndex)
+            const xMatrix = document.getElementById('xMatrix');
+            const xRows = xMatrix.querySelectorAll('.matrix-row');
+
+            xRows.forEach((row, i) => {
+                const cells = row.querySelectorAll('.matrix-cell');
+                if (cells[colIndex]) {
+                    cells[colIndex].classList.add('highlight-col');
+                }
+            });
+
+            // Highlight the row and column in X'X (since it's symmetric, use colIndex)
+            const xTransposeX = document.getElementById('xTransposeX');
+            const xtxRows = xTransposeX.querySelectorAll('.matrix-row');
+
+            // Highlight the entire row (using colIndex)
+            if (xtxRows[colIndex]) {
+                const rowCells = xtxRows[colIndex].querySelectorAll('.matrix-cell');
+                rowCells.forEach(cell => cell.classList.add('highlight-col'));
+            }
+
+            // Highlight the entire column (symmetric pattern, using colIndex)
+            xtxRows.forEach((row, i) => {
+                const cells = row.querySelectorAll('.matrix-cell');
+                if (cells[colIndex]) {
+                    cells[colIndex].classList.add('highlight-col');
+                }
+            });
+        }
+
+        function clearHighlights() {
+            const allCells = document.querySelectorAll('.matrix-cell');
+            allCells.forEach(cell => {
+                cell.classList.remove('highlight-row', 'highlight-col');
+            });
+        }
+
+        function handleCellClick(rowIndex, colIndex, isShiftPressed) {
+            if (isShiftPressed) {
+                randomizeRow(rowIndex);
+            } else {
+                randomizeColumn(colIndex);
+            }
+        }
+
+        // Track shift key state for hover effects
+        let isShiftHeld = false;
+        let currentHoveredCell = null;
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Shift' && !isShiftHeld) {
+                isShiftHeld = true;
+                // If we're currently hovering over a cell, update the highlight immediately
+                if (currentHoveredCell) {
+                    const { rowIndex, colIndex } = currentHoveredCell;
+                    highlightRow(rowIndex);
+                }
+            }
+        });
+
+        document.addEventListener('keyup', (event) => {
+            if (event.key === 'Shift') {
+                isShiftHeld = false;
+                // If we're currently hovering over a cell, update the highlight immediately
+                if (currentHoveredCell) {
+                    const { rowIndex, colIndex } = currentHoveredCell;
+                    highlightColumn(colIndex);
+                } else {
+                    clearHighlights();
+                }
+            }
+        });
+
+        function generateNewMatrix() {
+            generateRandomMatrix();
+            updateMatrices();
+        }
+
+        // Initialize
+        generateRandomMatrix();
+        updateMatrices();
+    </script>
+</body>
+
+</html>
