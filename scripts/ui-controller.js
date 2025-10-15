@@ -44,16 +44,42 @@ export class UIController {
     this.dom.elements.rotation.sliders.x.addEventListener("input", (e) => {
       this.handleRotationSliderChange(e.target, e.target.value, "x");
     });
+    this.dom.elements.rotation.sliders.x.addEventListener("mouseup", () => {
+      this.updateURL();
+    });
+    this.dom.elements.rotation.sliders.x.addEventListener("touchend", () => {
+      this.updateURL();
+    });
+
     this.dom.elements.rotation.sliders.y.addEventListener("input", (e) => {
       this.handleRotationSliderChange(e.target, e.target.value, "y");
+    });
+    this.dom.elements.rotation.sliders.y.addEventListener("mouseup", () => {
+      this.updateURL();
+    });
+    this.dom.elements.rotation.sliders.y.addEventListener("touchend", () => {
+      this.updateURL();
     });
 
     // Scale sliders
     this.dom.elements.scale.sliders.x.addEventListener("input", (e) => {
       this.handleScaleSliderChange(e.target, e.target.value, "x");
     });
+    this.dom.elements.scale.sliders.x.addEventListener("mouseup", () => {
+      this.updateURL();
+    });
+    this.dom.elements.scale.sliders.x.addEventListener("touchend", () => {
+      this.updateURL();
+    });
+
     this.dom.elements.scale.sliders.y.addEventListener("input", (e) => {
       this.handleScaleSliderChange(e.target, e.target.value, "y");
+    });
+    this.dom.elements.scale.sliders.y.addEventListener("mouseup", () => {
+      this.updateURL();
+    });
+    this.dom.elements.scale.sliders.y.addEventListener("touchend", () => {
+      this.updateURL();
     });
 
     // Matrix sliders
