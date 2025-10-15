@@ -10,6 +10,8 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 20px;
+            padding-bottom: 180px;
+            /* Space for floating controls */
             background-color: #f5f5f5;
         }
 
@@ -96,13 +98,6 @@
             font-size: 14px;
         }
 
-        .color-legend {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-top: 15px;
-        }
-
         .color-item {
             display: flex;
             align-items: center;
@@ -117,11 +112,100 @@
         }
 
         .controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
             text-align: center;
-            margin: 30px 0;
-            padding: 20px;
-            background-color: #f8f9fa;
-            border-radius: 8px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-top: 2px solid #007bff;
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .slider-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 5px auto;
+            max-width: 600px;
+            text-align: left;
+        }
+
+        .slider-group {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(0, 123, 255, 0.1);
+            position: relative;
+        }
+
+        .slider-auto-adjusted {
+            animation: sliderHighlight 0.5s ease;
+        }
+
+        @keyframes sliderHighlight {
+            0% {
+                border-color: rgba(0, 123, 255, 0.1);
+            }
+
+            50% {
+                border-color: #007bff;
+            }
+
+            100% {
+                border-color: rgba(0, 123, 255, 0.1);
+            }
+        }
+
+        .slider-group h4 {
+            margin: 0 0 8px 0;
+            color: #333;
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .slider-group label {
+            display: block;
+            margin-bottom: 4px;
+            color: #666;
+            font-size: 13px;
+        }
+
+        .slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+            margin-bottom: 10px;
+        }
+
+        .slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #007bff;
+            cursor: pointer;
+        }
+
+        .slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #007bff;
+            cursor: pointer;
+            border: none;
+        }
+
+        .slider-value {
+            font-weight: bold;
+            color: #007bff;
+            font-size: 16px;
         }
 
         button {
@@ -165,20 +249,6 @@
                 <div class="matrix-info">
                     <div><strong>Dimensions:</strong> 100 × 100 × 3</div>
                     <div><strong>Colors:</strong> Red, Green, Blue</div>
-                </div>
-                <div class="color-legend">
-                    <div class="color-item">
-                        <div class="color-box" style="background-color: red;"></div>
-                        <span>Red</span>
-                    </div>
-                    <div class="color-item">
-                        <div class="color-box" style="background-color: green;"></div>
-                        <span>Green</span>
-                    </div>
-                    <div class="color-item">
-                        <div class="color-box" style="background-color: blue;"></div>
-                        <span>Blue</span>
-                    </div>
                 </div>
             </div>
 
@@ -278,8 +348,18 @@
         </div>
 
         <div class="controls">
-            <button onclick="generateNewImage()">Generate New Pattern</button>
-            <button onclick="showDecomposition()">Show SVD Step by Step</button>
+            <div class="slider-container">
+                <div class="slider-group" id="colorSliderGroup">
+                    <label for="colorSlider">Colors: <span class="slider-value" id="colorValue">3</span></label>
+                    <input type="range" id="colorSlider" class="slider" min="1" max="10" value="3"
+                        oninput="updateSliders()">
+                </div>
+                <div class="slider-group" id="shapeSliderGroup">
+                    <label for="shapeSlider">Shapes: <span class="slider-value" id="shapeValue">3</span></label>
+                    <input type="range" id="shapeSlider" class="slider" min="1" max="10" value="3"
+                        oninput="updateSliders()">
+                </div>
+            </div>
         </div>
     </div>
 
@@ -292,69 +372,378 @@
         // Current image data
         let currentImageData = null;
         let currentSVD = null;
+        let currentColorComplexity = 3;
+        let currentShapeComplexity = 3;
+        let fixedShapes = null; // Store consistent shape positions and types
 
         // Initialize the visualization
         function init() {
-            generateSimple3ColorImage();
+            // Generate initial fixed shapes
+            fixedShapes = generateShapes(currentShapeComplexity, []); // Empty colors initially
+            generateComplexImage(currentColorComplexity, currentShapeComplexity);
             performSVD();
             drawAll();
         }
 
-        function generateSimple3ColorImage() {
-            // Create a simple 3-color image with only red, green, and blue (no black/white)
-            currentImageData = new Array(imageSize);
+        // Update slider values and regenerate image
+        function updateSliders() {
+            const newColorComplexity = parseInt(document.getElementById('colorSlider').value);
+            const newShapeComplexity = parseInt(document.getElementById('shapeSlider').value);
 
-            // Initialize with blue as default background
+            // Auto-adjust logic: ensure we have enough shapes to support the color complexity
+            let adjustedColorComplexity = newColorComplexity;
+            let adjustedShapeComplexity = newShapeComplexity;
+
+            // If user increases color complexity beyond shape complexity, increase shapes too
+            if (newColorComplexity > currentShapeComplexity && newColorComplexity !== currentColorComplexity) {
+                adjustedShapeComplexity = Math.max(newShapeComplexity, newColorComplexity);
+                document.getElementById('shapeSlider').value = adjustedShapeComplexity;
+                document.getElementById('shapeValue').textContent = adjustedShapeComplexity;
+
+                // Visual feedback for auto-adjustment
+                document.getElementById('shapeSliderGroup').classList.add('slider-auto-adjusted');
+                setTimeout(() => {
+                    document.getElementById('shapeSliderGroup').classList.remove('slider-auto-adjusted');
+                }, 500);
+
+                // Show brief notification
+                showSliderNotification(`Shape complexity automatically increased to ${adjustedShapeComplexity} to support ${newColorComplexity} colors`);
+            }
+
+            // If user decreases shape complexity below color complexity, decrease colors too
+            if (newShapeComplexity < currentColorComplexity && newShapeComplexity !== currentShapeComplexity) {
+                adjustedColorComplexity = Math.min(newColorComplexity, newShapeComplexity);
+                document.getElementById('colorSlider').value = adjustedColorComplexity;
+                document.getElementById('colorValue').textContent = adjustedColorComplexity;
+
+                // Visual feedback for auto-adjustment
+                document.getElementById('colorSliderGroup').classList.add('slider-auto-adjusted');
+                setTimeout(() => {
+                    document.getElementById('colorSliderGroup').classList.remove('slider-auto-adjusted');
+                }, 500);
+
+                // Show brief notification
+                showSliderNotification(`Color complexity automatically decreased to ${adjustedColorComplexity} to match ${newShapeComplexity} shapes`);
+            }
+
+            // Update display values
+            document.getElementById('colorValue').textContent = adjustedColorComplexity;
+            document.getElementById('shapeValue').textContent = adjustedShapeComplexity;
+
+            // Add or remove shapes if shape complexity changed
+            if (adjustedShapeComplexity !== currentShapeComplexity) {
+                if (adjustedShapeComplexity > currentShapeComplexity) {
+                    addShapesToPattern(adjustedShapeComplexity - currentShapeComplexity);
+                }
+            }
+
+            currentColorComplexity = adjustedColorComplexity;
+            currentShapeComplexity = adjustedShapeComplexity;
+
+            generateComplexImage(currentColorComplexity, currentShapeComplexity);
+            performSVD();
+            drawAll();
+        }
+
+        // Add notification function
+        function showSliderNotification(message) {
+            // Create notification element if it doesn't exist
+            let notification = document.getElementById('sliderNotification');
+            if (!notification) {
+                notification = document.createElement('div');
+                notification.id = 'sliderNotification';
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: #007bff;
+                    color: white;
+                    padding: 10px 20px;
+                    border-radius: 5px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    z-index: 10000;
+                    font-size: 14px;
+                    max-width: 400px;
+                    text-align: center;
+                    opacity: 0;
+                    transition: opacity 0.3s ease;
+                `;
+                document.body.appendChild(notification);
+            }
+
+            // Show notification
+            notification.textContent = message;
+            notification.style.opacity = '1';
+
+            // Hide after 2.5 seconds
+            setTimeout(() => {
+                notification.style.opacity = '0';
+            }, 2500);
+        }
+
+        function generateComplexImage(colorComplexity, shapeComplexity) {
+            // Initialize image with background
+            currentImageData = new Array(imageSize);
             for (let i = 0; i < imageSize; i++) {
                 currentImageData[i] = new Array(imageSize);
                 for (let j = 0; j < imageSize; j++) {
-                    currentImageData[i][j] = [0, 0, 255]; // Blue background
+                    currentImageData[i][j] = [0, 0, 0]; // Black background
                 }
             }
 
-            // Generate random positions and sizes for shapes
-            // Red circle (random position and size)
-            const circleCenterX = Math.floor(15 + Math.random() * 30); // Random x between 15-44
-            const circleCenterY = Math.floor(20 + Math.random() * 60); // Random y between 20-79
-            const circleRadius = 12 + Math.random() * 16;  // Radius can be float
+            // Generate color palette based on complexity
+            const colors = getColorPalette(colorComplexity);
 
+            // Use fixed shapes but apply current colors
+            const shapesToDraw = assignColorsToFixedShapes(fixedShapes, colors, shapeComplexity);
+
+            // Draw shapes to the image
+            drawShapes(shapesToDraw);
+        }
+
+        function assignColorsToFixedShapes(shapes, colors, shapeComplexity) {
+            // Take only the number of shapes we want based on current complexity
+            const activeShapes = shapes.slice(0, Math.min(shapeComplexity, shapes.length));
+
+            // Debug: Log color assignment
+            console.log(`Assigning colors: ${colors.length} colors available for ${activeShapes.length} shapes`);
+
+            // Always reassign colors cyclically to ensure color changes are reflected
+            // This ensures that when color complexity changes, all shapes get new color assignments
+            const shapesWithColors = activeShapes.map((shape, index) => {
+                const assignedColor = colors.length > 0 ? colors[index % colors.length] : [255, 255, 255];
+                console.log(`Shape ${index}: type=${shape.type}, color=[${assignedColor.join(',')}]`);
+                return {
+                    ...shape,
+                    color: assignedColor
+                };
+            });
+
+            return shapesWithColors;
+        }
+
+        function getColorPalette(complexity) {
+            const baseColors = [
+                [255, 0, 0],    // Red
+                [0, 255, 0],    // Green  
+                [0, 0, 255],    // Blue
+                [255, 255, 0],  // Yellow
+                [255, 0, 255],  // Magenta
+                [0, 255, 255],  // Cyan
+                [255, 128, 0],  // Orange
+                [128, 0, 255],  // Purple
+                [255, 192, 203], // Pink
+                [128, 255, 0]   // Lime
+            ];
+
+            return baseColors.slice(0, Math.min(complexity, baseColors.length));
+        }
+
+        function generateShapes(complexity, colors) {
+            const shapes = [];
+            const shapeTypes = ['circle', 'rectangle', 'triangle', 'diamond', 'pentagon', 'hexagon', 'star', 'ellipse', 'cross', 'heart'];
+
+            // Generate up to 10 shapes with fixed positions but no colors yet
+            for (let i = 0; i < Math.min(10, 10); i++) { // Always generate 10 potential shapes
+                const shapeType = shapeTypes[i % shapeTypes.length];
+
+                shapes.push({
+                    type: shapeType,
+                    color: null, // Color will be assigned later
+                    x: Math.floor(Math.random() * (imageSize - 40)) + 20,
+                    y: Math.floor(Math.random() * (imageSize - 40)) + 20,
+                    size: Math.floor(Math.random() * 20) + 15,
+                    rotation: Math.random() * 2 * Math.PI
+                });
+            }
+
+            return shapes;
+        }
+
+        function addShapesToPattern(numNewShapes) {
+            const shapeTypes = ['circle', 'rectangle', 'triangle', 'diamond', 'pentagon', 'hexagon', 'star', 'ellipse', 'cross', 'heart'];
+
+            // Add new shapes to the existing pattern
+            for (let i = 0; i < numNewShapes && fixedShapes.length < 10; i++) {
+                const currentShapeIndex = fixedShapes.length;
+                const shapeType = shapeTypes[currentShapeIndex % shapeTypes.length];
+
+                fixedShapes.push({
+                    type: shapeType,
+                    color: null, // Color will be assigned later
+                    x: Math.floor(Math.random() * (imageSize - 40)) + 20,
+                    y: Math.floor(Math.random() * (imageSize - 40)) + 20,
+                    size: Math.floor(Math.random() * 20) + 15,
+                    rotation: Math.random() * 2 * Math.PI
+                });
+            }
+        }
+
+        function drawShapes(shapes) {
+            shapes.forEach(shape => {
+                switch (shape.type) {
+                    case 'circle':
+                        drawCircle(shape.x, shape.y, shape.size, shape.color);
+                        break;
+                    case 'rectangle':
+                        drawRectangle(shape.x, shape.y, shape.size, shape.size, shape.color);
+                        break;
+                    case 'triangle':
+                        drawTriangle(shape.x, shape.y, shape.size, shape.color);
+                        break;
+                    case 'diamond':
+                        drawDiamond(shape.x, shape.y, shape.size, shape.color);
+                        break;
+                    case 'pentagon':
+                        drawPolygon(shape.x, shape.y, shape.size, 5, shape.color, shape.rotation);
+                        break;
+                    case 'hexagon':
+                        drawPolygon(shape.x, shape.y, shape.size, 6, shape.color, shape.rotation);
+                        break;
+                    case 'star':
+                        drawStar(shape.x, shape.y, shape.size, shape.color);
+                        break;
+                    case 'ellipse':
+                        drawEllipse(shape.x, shape.y, shape.size, shape.size * 0.7, shape.color);
+                        break;
+                    case 'cross':
+                        drawCross(shape.x, shape.y, shape.size, shape.color);
+                        break;
+                    case 'heart':
+                        drawHeart(shape.x, shape.y, shape.size, shape.color);
+                        break;
+                }
+            });
+        }
+
+        function drawCircle(cx, cy, radius, color) {
             for (let i = 0; i < imageSize; i++) {
                 for (let j = 0; j < imageSize; j++) {
-                    const dist = Math.sqrt((i - circleCenterY) ** 2 + (j - circleCenterX) ** 2);
-                    if (dist <= circleRadius) {
-                        currentImageData[i][j] = [255, 0, 0]; // Red
+                    const dist = Math.sqrt((i - cy) ** 2 + (j - cx) ** 2);
+                    if (dist <= radius) {
+                        currentImageData[i][j] = color;
                     }
                 }
             }
+        }
 
-            // Green rectangle (random position and size)
-            const rectTop = Math.floor(20 + Math.random() * 30);    // Random top between 20-49
-            const rectLeft = Math.floor(30 + Math.random() * 30);   // Random left between 30-59
-            const rectWidth = Math.floor(20 + Math.random() * 25);  // Random width between 20-44
-            const rectHeight = Math.floor(25 + Math.random() * 30); // Random height between 25-54
-
-            for (let i = rectTop; i < Math.min(rectTop + rectHeight, imageSize); i++) {
-                for (let j = rectLeft; j < Math.min(rectLeft + rectWidth, imageSize); j++) {
-                    currentImageData[i][j] = [0, 255, 0]; // Green
-                }
-            }
-
-            // Blue triangle (random position and size)
-            const triangleLeft = Math.floor(60 + Math.random() * 25);  // Random left between 60-84
-            const triangleTop = Math.floor(10 + Math.random() * 30);   // Random top between 10-39
-            const triangleSize = Math.floor(25 + Math.random() * 35);  // Random size between 25-59
-
-            for (let i = triangleTop; i < Math.min(triangleTop + triangleSize, imageSize); i++) {
-                for (let j = triangleLeft; j < Math.min(triangleLeft + triangleSize, imageSize); j++) {
-                    // Triangle condition: creates a right triangle
-                    const relativeI = i - triangleTop;
-                    const relativeJ = j - triangleLeft;
-                    if (relativeJ < (triangleSize - relativeI) && relativeI < triangleSize && relativeJ >= 0) {
-                        // Keep it blue since background is already blue, but make it more defined
-                        currentImageData[i][j] = [0, 0, 255]; // Blue
+        function drawRectangle(x, y, width, height, color) {
+            for (let i = Math.max(0, Math.floor(y)); i < Math.min(imageSize, Math.ceil(y + height)); i++) {
+                for (let j = Math.max(0, Math.floor(x)); j < Math.min(imageSize, Math.ceil(x + width)); j++) {
+                    if (i >= 0 && i < imageSize && j >= 0 && j < imageSize) {
+                        currentImageData[i][j] = color;
                     }
                 }
             }
+        }
+
+        function drawTriangle(cx, cy, size, color) {
+            for (let i = 0; i < imageSize; i++) {
+                for (let j = 0; j < imageSize; j++) {
+                    // Simple right triangle
+                    const relativeI = i - cy;
+                    const relativeJ = j - cx;
+                    if (relativeJ >= 0 && relativeI >= 0 && relativeJ < (size - relativeI) && relativeI < size) {
+                        currentImageData[i][j] = color;
+                    }
+                }
+            }
+        }
+
+        function drawDiamond(cx, cy, size, color) {
+            for (let i = 0; i < imageSize; i++) {
+                for (let j = 0; j < imageSize; j++) {
+                    const dx = Math.abs(j - cx);
+                    const dy = Math.abs(i - cy);
+                    if (dx + dy <= size) {
+                        currentImageData[i][j] = color;
+                    }
+                }
+            }
+        }
+
+        function drawPolygon(cx, cy, size, sides, color, rotation) {
+            for (let i = 0; i < imageSize; i++) {
+                for (let j = 0; j < imageSize; j++) {
+                    const dx = j - cx;
+                    const dy = i - cy;
+                    const angle = Math.atan2(dy, dx) + rotation;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    // Approximate polygon as circle for simplicity
+                    const polygonRadius = size * Math.cos(Math.PI / sides) / Math.cos((angle % (2 * Math.PI / sides)) - Math.PI / sides);
+                    if (dist <= Math.abs(polygonRadius) && dist <= size) {
+                        currentImageData[i][j] = color;
+                    }
+                }
+            }
+        }
+
+        function drawStar(cx, cy, size, color) {
+            for (let i = 0; i < imageSize; i++) {
+                for (let j = 0; j < imageSize; j++) {
+                    const dx = j - cx;
+                    const dy = i - cy;
+                    const angle = Math.atan2(dy, dx);
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    // Simple 5-pointed star approximation
+                    const starAngle = ((angle + Math.PI) % (2 * Math.PI / 5)) - Math.PI / 5;
+                    const starRadius = size * (0.5 + 0.5 * Math.cos(5 * starAngle));
+                    if (dist <= starRadius) {
+                        currentImageData[i][j] = color;
+                    }
+                }
+            }
+        }
+
+        function drawEllipse(cx, cy, width, height, color) {
+            for (let i = 0; i < imageSize; i++) {
+                for (let j = 0; j < imageSize; j++) {
+                    const dx = (j - cx) / width;
+                    const dy = (i - cy) / height;
+                    if (dx * dx + dy * dy <= 1) {
+                        currentImageData[i][j] = color;
+                    }
+                }
+            }
+        }
+
+        function drawCross(cx, cy, size, color) {
+            const thickness = Math.max(3, Math.floor(size / 4));
+            // Horizontal bar
+            const hx = Math.floor(cx - size);
+            const hy = Math.floor(cy - thickness / 2);
+            const hwidth = Math.floor(size * 2);
+            const hheight = Math.floor(thickness);
+            drawRectangle(hx, hy, hwidth, hheight, color);
+
+            // Vertical bar  
+            const vx = Math.floor(cx - thickness / 2);
+            const vy = Math.floor(cy - size);
+            const vwidth = Math.floor(thickness);
+            const vheight = Math.floor(size * 2);
+            drawRectangle(vx, vy, vwidth, vheight, color);
+        }
+
+        function drawHeart(cx, cy, size, color) {
+            for (let i = 0; i < imageSize; i++) {
+                for (let j = 0; j < imageSize; j++) {
+                    const dx = (j - cx) / size;
+                    const dy = (i - cy) / size;
+
+                    // Heart equation approximation
+                    const heartEq = Math.pow(dx * dx + dy * dy - 1, 3) - dx * dx * dy * dy * dy;
+                    if (heartEq <= 0 && dx * dx + dy * dy <= 2) {
+                        currentImageData[i][j] = color;
+                    }
+                }
+            }
+        }
+
+        function generateSimple3ColorImage() {
+            generateComplexImage(3, 3);
         }
 
         function performSVD() {
@@ -793,17 +1182,11 @@
         }
 
         function generateNewImage() {
-            generateSimple3ColorImage();
+            // Generate completely new shapes when user clicks "Generate New Pattern"
+            fixedShapes = generateShapes(currentShapeComplexity, []);
+            generateComplexImage(currentColorComplexity, currentShapeComplexity);
             performSVD();
             drawAll();
-        }
-
-        function showDecomposition() {
-            alert('SVD Decomposition:\n\n' +
-                'U: Shows WHERE each pattern appears in the image\n' +
-                'Σ: Shows HOW IMPORTANT each pattern is\n' +
-                'V^T: Shows HOW the RGB colors combine for each pattern\n\n' +
-                'Together: A = U × Σ × V^T reconstructs the original image');
         }
 
         init();
