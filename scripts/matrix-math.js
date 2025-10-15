@@ -139,6 +139,18 @@ export class MatrixMath {
         eigenvector2 = { x: 0, y: 1 };
         defective = false;
       }
+
+      // Normalize eigenvectors
+      const norm1 = Math.hypot(eigenvector1.x, eigenvector1.y);
+      eigenvector1 = {
+        x: (eigenvalue1 * eigenvector1.x) / norm1,
+        y: (eigenvalue1 * eigenvector1.y) / norm1,
+      };
+      const norm2 = Math.hypot(eigenvector2.x, eigenvector2.y);
+      eigenvector2 = {
+        x: (eigenvalue2 * eigenvector2.x) / norm2,
+        y: (eigenvalue2 * eigenvector2.y) / norm2,
+      };
     }
 
     const result = {
