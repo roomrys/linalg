@@ -8,6 +8,37 @@ export class UIController {
     this.setupEventListeners();
   }
 
+  updateURL() {
+    const matrix = this.getCurrentMatrix();
+    const vector = this.getCurrentVector();
+
+    const params = new URLSearchParams();
+    params.set(
+      "matrix",
+      `${matrix.a11},${matrix.a12},${matrix.a21},${matrix.a22}`
+    );
+    params.set("vector", `${vector.v1},${vector.v2}`);
+
+    const newURL = `${window.location.pathname}?${params.toString()}`;
+    window.history.replaceState({}, "", newURL);
+  }
+
+  getCurrentMatrix() {
+    return {
+      a11: parseFloat(this.dom.elements.matrix.inputs.a11.value) || 0,
+      a12: parseFloat(this.dom.elements.matrix.inputs.a12.value) || 0,
+      a21: parseFloat(this.dom.elements.matrix.inputs.a21.value) || 0,
+      a22: parseFloat(this.dom.elements.matrix.inputs.a22.value) || 0,
+    };
+  }
+
+  getCurrentVector() {
+    return {
+      v1: parseFloat(this.dom.elements.vectors.v.inputs.v1.value) || 0,
+      v2: parseFloat(this.dom.elements.vectors.v.inputs.v2.value) || 0,
+    };
+  }
+
   setupEventListeners() {
     // Rotation sliders
     this.dom.elements.rotation.sliders.x.addEventListener("input", (e) => {
@@ -147,10 +178,7 @@ export class UIController {
     this.dom.elements.matrix.inputs[matrixElement].value = value.toFixed(1);
 
     // Apply the matrix transformation
-    const a11 = parseFloat(this.dom.elements.matrix.inputs.a11.value);
-    const a12 = parseFloat(this.dom.elements.matrix.inputs.a12.value);
-    const a21 = parseFloat(this.dom.elements.matrix.inputs.a21.value);
-    const a22 = parseFloat(this.dom.elements.matrix.inputs.a22.value);
+    const { a11, a12, a21, a22 } = this.getCurrentMatrix();
     this.applyMatrixTransformation(a11, a12, a21, a22);
   }
 
@@ -169,6 +197,7 @@ export class UIController {
 
     // Update vector drawing
     this.vectorRenderer.updateVectorDrawing();
+    this.updateURL();
   }
 
   updateVector({ v1, v2 }) {
@@ -274,6 +303,8 @@ export class UIController {
     )}°`;
     this.dom.elements.scale.values.x.textContent = scaleX.toFixed(1);
     this.dom.elements.scale.values.y.textContent = scaleY.toFixed(1);
+
+    this.updateURL();
 
     // Apply the transformations to the grids
     this.updateGridTransforms(rotationX, rotationY, basisX, basisY);
