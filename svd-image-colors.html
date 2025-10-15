@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVD Visualization with 3-Color Image</title>
+    <script src="https://cdn.jsdelivr.net/npm/ml-matrix@6.12.1/matrix.umd.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .visualization-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .rank1-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .rank1-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            margin: 30px 0 20px 0;
+            color: #333;
+        }
+
+        .reconstruction-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .reconstruction-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            margin: 30px 0 20px 0;
+            color: #333;
+        }
+
+        .matrix-section {
+            text-align: center;
+        }
+
+        .matrix-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .matrix-subtitle {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        canvas {
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .matrix-info {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .color-legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .color-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .color-box {
+            width: 20px;
+            height: 20px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+
+        .controls {
+            text-align: center;
+            margin: 30px 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 0 10px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .equation {
+            text-align: center;
+            margin: 30px 0;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>SVD Decomposition of a 3-Color Image</h1>
+
+        <div class="equation">
+            A = U × Σ × V<sup>T</sup>
+        </div>
+
+        <div class="visualization-container">
+            <div class="matrix-section">
+                <div class="matrix-title">Original Image (A)</div>
+                <div class="matrix-subtitle">100×100×3 RGB Image</div>
+                <canvas id="originalImage" width="200" height="200"></canvas>
+                <div class="matrix-info">
+                    <div><strong>Dimensions:</strong> 100 × 100 × 3</div>
+                    <div><strong>Colors:</strong> Red, Green, Blue</div>
+                </div>
+                <div class="color-legend">
+                    <div class="color-item">
+                        <div class="color-box" style="background-color: red;"></div>
+                        <span>Red</span>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-box" style="background-color: green;"></div>
+                        <span>Green</span>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-box" style="background-color: blue;"></div>
+                        <span>Blue</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="matrix-section">
+                <div class="matrix-title">U Matrix</div>
+                <div class="matrix-subtitle">Spatial Patterns (Left Singular Vectors)</div>
+                <canvas id="uMatrix" width="200" height="200"></canvas>
+                <div class="matrix-info">
+                    <div><strong>Dimensions:</strong> 10000 × 3</div>
+                    <div><strong>Meaning:</strong> Where each pattern appears spatially</div>
+                    <div><strong>Columns:</strong> Orthogonal spatial modes</div>
+                </div>
+            </div>
+
+            <div class="matrix-section">
+                <div class="matrix-title">Σ Matrix</div>
+                <div class="matrix-subtitle">Singular Values (Importance Weights)</div>
+                <canvas id="sigmaMatrix" width="200" height="200"></canvas>
+                <div class="matrix-info">
+                    <div><strong>Dimensions:</strong> 3 × 3 (diagonal)</div>
+                    <div><strong>Meaning:</strong> Importance of each component</div>
+                    <div><strong>Order:</strong> Largest to smallest</div>
+                </div>
+            </div>
+
+            <div class="matrix-section">
+                <div class="matrix-title">V<sup>T</sup> Matrix</div>
+                <div class="matrix-subtitle">Color Patterns (Right Singular Vectors)</div>
+                <canvas id="vMatrix" width="200" height="200"></canvas>
+                <div class="matrix-info">
+                    <div><strong>Dimensions:</strong> 3 × 3</div>
+                    <div><strong>Meaning:</strong> Transpose of right singular vectors</div>
+                    <div><strong>Rows:</strong> How each component mixes RGB channels</div>
+                    <div><strong>Note:</strong> Each row is vᵢᵀ (transposed)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="rank1-title">Rank-1 Components: A = u₁σ₁v₁ᵀ + u₂σ₂v₂ᵀ + u₃σ₃v₃ᵀ</div>
+
+        <div class="rank1-container">
+            <div class="matrix-section">
+                <div class="matrix-title">Component 1</div>
+                <div class="matrix-subtitle">u₁σ₁v₁ᵀ</div>
+                <canvas id="rank1Component1" width="200" height="200"></canvas>
+                <div class="matrix-info">
+                    <div><strong>Singular Value:</strong> σ₁ = <span id="sigma1Value">0</span></div>
+                    <div><strong>Contribution:</strong> Most important component</div>
+                </div>
+            </div>
+
+            <div class="matrix-section">
+                <div class="matrix-title">Component 2</div>
+                <div class="matrix-subtitle">u₂σ₂v₂ᵀ</div>
+                <canvas id="rank1Component2" width="200" height="200"></canvas>
+                <div class="matrix-info">
+                    <div><strong>Singular Value:</strong> σ₂ = <span id="sigma2Value">0</span></div>
+                    <div><strong>Contribution:</strong> Second most important</div>
+                </div>
+            </div>
+
+            <div class="matrix-section">
+                <div class="matrix-title">Component 3</div>
+                <div class="matrix-subtitle">u₃σ₃v₃ᵀ</div>
+                <canvas id="rank1Component3" width="200" height="200"></canvas>
+                <div class="matrix-info">
+                    <div><strong>Singular Value:</strong> σ₃ = <span id="sigma3Value">0</span></div>
+                    <div><strong>Contribution:</strong> Least important component</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="reconstruction-title">Progressive Reconstruction</div>
+
+        <div class="reconstruction-container">
+            <div class="matrix-section">
+                <div class="matrix-title">Rank-2 Approximation</div>
+                <div class="matrix-subtitle">Component 1 + Component 2</div>
+                <canvas id="rank2Reconstruction" width="200" height="200"></canvas>
+                <div class="matrix-info">
+                    <div><strong>Formula:</strong> u₁σ₁v₁ᵀ + u₂σ₂v₂ᵀ</div>
+                    <div><strong>Quality:</strong> Partial reconstruction</div>
+                    <div><strong>Missing:</strong> Component 3</div>
+                </div>
+            </div>
+
+            <div class="matrix-section">
+                <div class="matrix-title">Full Reconstruction</div>
+                <div class="matrix-subtitle">Component 1 + Component 2 + Component 3</div>
+                <canvas id="fullReconstruction" width="200" height="200"></canvas>
+                <div class="matrix-info">
+                    <div><strong>Formula:</strong> u₁σ₁v₁ᵀ + u₂σ₂v₂ᵀ + u₃σ₃v₃ᵀ</div>
+                    <div><strong>Quality:</strong> Perfect reconstruction</div>
+                    <div><strong>Status:</strong> Equals original image</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button onclick="generateNewImage()">Generate New Pattern</button>
+            <button onclick="showDecomposition()">Show SVD Step by Step</button>
+        </div>
+    </div>
+
+    <script>
+
+        // Image dimensions
+        const imageSize = 100;
+        const canvasSize = 200;
+
+        // Current image data
+        let currentImageData = null;
+        let currentSVD = null;
+
+        // Initialize the visualization
+        function init() {
+            generateSimple3ColorImage();
+            performSVD();
+            drawAll();
+        }
+
+        function generateSimple3ColorImage() {
+            // Create a simple 3-color image with only red, green, and blue (no black/white)
+            currentImageData = new Array(imageSize);
+
+            // Initialize with blue as default background
+            for (let i = 0; i < imageSize; i++) {
+                currentImageData[i] = new Array(imageSize);
+                for (let j = 0; j < imageSize; j++) {
+                    currentImageData[i][j] = [0, 0, 255]; // Blue background
+                }
+            }
+
+            // Generate random positions and sizes for shapes
+            // Red circle (random position and size)
+            const circleCenterX = Math.floor(15 + Math.random() * 30); // Random x between 15-44
+            const circleCenterY = Math.floor(20 + Math.random() * 60); // Random y between 20-79
+            const circleRadius = 12 + Math.random() * 16;  // Radius can be float
+
+            for (let i = 0; i < imageSize; i++) {
+                for (let j = 0; j < imageSize; j++) {
+                    const dist = Math.sqrt((i - circleCenterY) ** 2 + (j - circleCenterX) ** 2);
+                    if (dist <= circleRadius) {
+                        currentImageData[i][j] = [255, 0, 0]; // Red
+                    }
+                }
+            }
+
+            // Green rectangle (random position and size)
+            const rectTop = Math.floor(20 + Math.random() * 30);    // Random top between 20-49
+            const rectLeft = Math.floor(30 + Math.random() * 30);   // Random left between 30-59
+            const rectWidth = Math.floor(20 + Math.random() * 25);  // Random width between 20-44
+            const rectHeight = Math.floor(25 + Math.random() * 30); // Random height between 25-54
+
+            for (let i = rectTop; i < Math.min(rectTop + rectHeight, imageSize); i++) {
+                for (let j = rectLeft; j < Math.min(rectLeft + rectWidth, imageSize); j++) {
+                    currentImageData[i][j] = [0, 255, 0]; // Green
+                }
+            }
+
+            // Blue triangle (random position and size)
+            const triangleLeft = Math.floor(60 + Math.random() * 25);  // Random left between 60-84
+            const triangleTop = Math.floor(10 + Math.random() * 30);   // Random top between 10-39
+            const triangleSize = Math.floor(25 + Math.random() * 35);  // Random size between 25-59
+
+            for (let i = triangleTop; i < Math.min(triangleTop + triangleSize, imageSize); i++) {
+                for (let j = triangleLeft; j < Math.min(triangleLeft + triangleSize, imageSize); j++) {
+                    // Triangle condition: creates a right triangle
+                    const relativeI = i - triangleTop;
+                    const relativeJ = j - triangleLeft;
+                    if (relativeJ < (triangleSize - relativeI) && relativeI < triangleSize && relativeJ >= 0) {
+                        // Keep it blue since background is already blue, but make it more defined
+                        currentImageData[i][j] = [0, 0, 255]; // Blue
+                    }
+                }
+            }
+        }
+
+        function performSVD() {
+            // Convert the 3D image array (100x100x3) into a 2D matrix (10000x3)
+            // Each row represents a pixel with its RGB values
+            const imageMatrix = [];
+            for (let i = 0; i < imageSize; i++) {
+                for (let j = 0; j < imageSize; j++) {
+                    // Normalize to 0-1 range for better numerical stability
+                    const [r, g, b] = currentImageData[i][j];
+                    imageMatrix.push([r / 255, g / 255, b / 255]);
+                }
+            }
+
+            // Perform actual SVD from scratch
+            currentSVD = computeSVDFromScratch(imageMatrix);
+
+            console.log('SVD Results:');
+            console.log('Singular values:', currentSVD.sigma);
+            console.log('U dimensions:', currentSVD.U.length, 'x', currentSVD.U[0].length);
+            console.log('VT dimensions:', currentSVD.VT.length, 'x', currentSVD.VT[0].length);
+        }
+
+
+
+        function computeSVDFromScratch(matrix) {
+            const A = new mlMatrix.Matrix(matrix);
+
+            // Perform SVD
+            const svd = new mlMatrix.SingularValueDecomposition(A);
+
+            // Extract components
+            const U = svd.leftSingularVectors.to2DArray();
+            const sigma = svd.diagonal;
+            const V = svd.rightSingularVectors.to2DArray();
+
+            // Transpose V to get V^T (ML-Matrix returns V, but we need V^T)
+            const VT = [];
+            for (let i = 0; i < V[0].length; i++) {
+                VT[i] = [];
+                for (let j = 0; j < V.length; j++) {
+                    VT[i][j] = V[j][i];
+                }
+            }
+
+            // Fix sign ambiguity: make the largest absolute value in each V^T row positive
+            for (let i = 0; i < VT.length; i++) {
+                const row = VT[i];
+                let maxAbsIdx = 0;
+                let maxAbsVal = Math.abs(row[0]);
+
+                for (let j = 1; j < row.length; j++) {
+                    if (Math.abs(row[j]) > maxAbsVal) {
+                        maxAbsVal = Math.abs(row[j]);
+                        maxAbsIdx = j;
+                    }
+                }
+
+                // If the largest element is negative, flip the sign of the entire row
+                // and corresponding column in U
+                if (row[maxAbsIdx] < 0) {
+                    for (let j = 0; j < row.length; j++) {
+                        VT[i][j] = -VT[i][j];
+                    }
+                    for (let k = 0; k < U.length; k++) {
+                        U[k][i] = -U[k][i];
+                    }
+                }
+            }
+
+            return { U, sigma, VT };
+        }
+
+        function drawAll() {
+            drawOriginalImage();
+            drawUMatrix();
+            drawSigmaMatrix();
+            drawVMatrix();
+            drawRank1Components();
+            drawReconstructions();
+            updateSigmaValues();
+        }
+
+        function drawOriginalImage() {
+            const canvas = document.getElementById('originalImage');
+            const ctx = canvas.getContext('2d');
+            const imageData = ctx.createImageData(canvasSize, canvasSize);
+
+            for (let i = 0; i < canvasSize; i++) {
+                for (let j = 0; j < canvasSize; j++) {
+                    // Map canvas coordinates to image coordinates
+                    const imgI = Math.floor(i * imageSize / canvasSize);
+                    const imgJ = Math.floor(j * imageSize / canvasSize);
+
+                    const pixelIndex = (i * canvasSize + j) * 4;
+                    const [r, g, b] = currentImageData[imgI][imgJ];
+
+                    imageData.data[pixelIndex] = r;     // Red
+                    imageData.data[pixelIndex + 1] = g; // Green
+                    imageData.data[pixelIndex + 2] = b; // Blue
+                    imageData.data[pixelIndex + 3] = 255; // Alpha
+                }
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        function drawUMatrix() {
+            const canvas = document.getElementById('uMatrix');
+            const ctx = canvas.getContext('2d');
+
+            // Clear canvas
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvasSize, canvasSize);
+
+            // Draw U matrix as a heatmap showing the first few columns
+            const cols = 3; // Show first 3 columns
+            const colWidth = canvasSize / cols;
+
+            for (let col = 0; col < cols; col++) {
+                // Find min/max for normalization
+                let minVal = Infinity, maxVal = -Infinity;
+                for (let i = 0; i < currentSVD.U.length; i++) {
+                    const val = currentSVD.U[i][col];
+                    minVal = Math.min(minVal, val);
+                    maxVal = Math.max(maxVal, val);
+                }
+
+                // Draw column as heatmap
+                for (let i = 0; i < imageSize; i++) {
+                    for (let j = 0; j < imageSize; j++) {
+                        const idx = i * imageSize + j;
+                        const val = currentSVD.U[idx][col];
+                        const normalized = (val - minVal) / (maxVal - minVal);
+
+                        const intensity = Math.floor(normalized * 255);
+                        ctx.fillStyle = `rgb(${intensity}, ${intensity}, ${intensity})`;
+
+                        const x = col * colWidth + (j / imageSize) * colWidth;
+                        const y = (i / imageSize) * canvasSize;
+                        const w = colWidth / imageSize;
+                        const h = canvasSize / imageSize;
+
+                        ctx.fillRect(x, y, w + 1, h + 1);
+                    }
+                }
+
+                // Draw column separator
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo((col + 1) * colWidth, 0);
+                ctx.lineTo((col + 1) * colWidth, canvasSize);
+                ctx.stroke();
+
+                // Add column label
+                ctx.fillStyle = 'black';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(`U[:,${col}]`, col * colWidth + colWidth / 2, canvasSize - 5);
+            }
+        }
+
+        function drawSigmaMatrix() {
+            const canvas = document.getElementById('sigmaMatrix');
+            const ctx = canvas.getContext('2d');
+
+            // Clear canvas
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvasSize, canvasSize);
+
+            // Draw singular values as bars
+            const maxSigma = Math.max(...currentSVD.sigma);
+            const barWidth = canvasSize / currentSVD.sigma.length;
+            const margin = 20;
+
+            ctx.fillStyle = '#007bff';
+
+            for (let i = 0; i < currentSVD.sigma.length; i++) {
+                const height = ((currentSVD.sigma[i] / maxSigma) * (canvasSize - 2 * margin));
+                const x = i * barWidth + barWidth * 0.1;
+                const y = canvasSize - margin - height;
+                const w = barWidth * 0.8;
+
+                ctx.fillRect(x, y, w, height);
+
+                // Add value label
+                ctx.fillStyle = 'black';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(currentSVD.sigma[i].toFixed(1), i * barWidth + barWidth / 2, canvasSize - 5);
+                ctx.fillText(`σ${i + 1}`, i * barWidth + barWidth / 2, y - 5);
+                ctx.fillStyle = '#007bff';
+            }
+        }
+
+        function drawVMatrix() {
+            const canvas = document.getElementById('vMatrix');
+            const ctx = canvas.getContext('2d');
+
+            // Clear canvas
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvasSize, canvasSize);
+
+            const cellSize = canvasSize / 3;
+
+            // Find global min/max for consistent coloring
+            let minVal = Infinity, maxVal = -Infinity;
+            for (let i = 0; i < currentSVD.VT.length; i++) {
+                for (let j = 0; j < currentSVD.VT[i].length; j++) {
+                    minVal = Math.min(minVal, currentSVD.VT[i][j]);
+                    maxVal = Math.max(maxVal, currentSVD.VT[i][j]);
+                }
+            }
+
+            // Calculate row colors first for consistent coloring
+            const rowColors = [];
+            const rowNames = [];
+
+            for (let i = 0; i < 3; i++) {
+                const row = currentSVD.VT[i];
+
+                // Get the RGB values for this row (how this component mixes colors)
+                const rVal = Math.abs(row[0]);
+                const gVal = Math.abs(row[1]);
+                const bVal = Math.abs(row[2]);
+
+                // Normalize to 0-255 range for color display
+                const maxVal = Math.max(rVal, gVal, bVal);
+                const r = Math.floor((rVal / maxVal) * 255);
+                const g = Math.floor((gVal / maxVal) * 255);
+                const b = Math.floor((bVal / maxVal) * 255);
+
+                // Create a lighter version of the color for background (add transparency effect)
+                const lightRowColor = `rgba(${r}, ${g}, ${b}, 0.3)`;
+                const rowColor = `rgb(${r}, ${g}, ${b})`;
+
+                rowColors.push({ light: lightRowColor, full: rowColor });
+
+                // Determine the dominant color name
+                if (rVal > gVal && rVal > bVal) {
+                    rowNames.push('Red');
+                } else if (gVal > rVal && gVal > bVal) {
+                    rowNames.push('Green');
+                } else {
+                    rowNames.push('Blue');
+                }
+            }
+
+            // Draw matrix cells with colored row backgrounds
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    const val = currentSVD.VT[i][j];
+
+                    // Use the row's color as background
+                    ctx.fillStyle = rowColors[i].light;
+                    ctx.fillRect(j * cellSize, i * cellSize, cellSize, cellSize);
+
+                    // Draw border
+                    ctx.strokeStyle = '#333';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(j * cellSize, i * cellSize, cellSize, cellSize);
+
+                    // Add value text
+                    ctx.fillStyle = 'black';
+                    ctx.font = '14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(
+                        val.toFixed(3),
+                        j * cellSize + cellSize / 2,
+                        i * cellSize + cellSize / 2 + 5
+                    );
+                }
+            }
+
+            // Draw row labels with full color backgrounds
+            ctx.textAlign = 'right';
+            ctx.font = '12px Arial';
+
+            for (let i = 0; i < 3; i++) {
+                // Draw colored background for the row label
+                const labelX = -45;
+                const labelY = i * cellSize + cellSize / 2 - 7;
+                const labelWidth = 40;
+                const labelHeight = 14;
+
+                ctx.fillStyle = rowColors[i].full;
+                ctx.fillRect(labelX, labelY, labelWidth, labelHeight);
+
+                // Draw contrasting text
+                const r = parseInt(rowColors[i].full.match(/\d+/g)[0]);
+                const g = parseInt(rowColors[i].full.match(/\d+/g)[1]);
+                const b = parseInt(rowColors[i].full.match(/\d+/g)[2]);
+                const brightness = (r * 0.299 + g * 0.587 + b * 0.114);
+                ctx.fillStyle = brightness > 127 ? 'black' : 'white';
+                ctx.font = 'bold 10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(rowNames[i], labelX + labelWidth / 2, labelY + 10);
+            }
+        }
+
+        function drawRank1Components() {
+            for (let component = 0; component < 3; component++) {
+                drawRank1Component(component);
+            }
+        }
+
+        function drawRank1Component(componentIndex) {
+            const canvas = document.getElementById(`rank1Component${componentIndex + 1}`);
+            const ctx = canvas.getContext('2d');
+
+            // Calculate the rank-1 component: u_i * sigma_i * v_i^T
+            const componentImageData = calculateRank1ComponentImage(componentIndex);
+
+            const imageData = ctx.createImageData(canvasSize, canvasSize);
+
+            for (let i = 0; i < canvasSize; i++) {
+                for (let j = 0; j < canvasSize; j++) {
+                    // Map canvas coordinates to image coordinates
+                    const imgI = Math.floor(i * imageSize / canvasSize);
+                    const imgJ = Math.floor(j * imageSize / canvasSize);
+
+                    const pixelIndex = (i * canvasSize + j) * 4;
+                    const [r, g, b] = componentImageData[imgI][imgJ];
+
+                    // Clamp values to 0-255 range
+                    imageData.data[pixelIndex] = Math.max(0, Math.min(255, r));     // Red
+                    imageData.data[pixelIndex + 1] = Math.max(0, Math.min(255, g)); // Green
+                    imageData.data[pixelIndex + 2] = Math.max(0, Math.min(255, b)); // Blue
+                    imageData.data[pixelIndex + 3] = 255; // Alpha
+                }
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        function calculateRank1ComponentImage(componentIndex) {
+            const componentImage = new Array(imageSize);
+            const sigma = currentSVD.sigma[componentIndex];
+            const vRow = currentSVD.VT[componentIndex];
+
+            // Debug: Log the V^T row being used
+            console.log(`Component ${componentIndex}: sigma=${sigma.toFixed(3)}, vRow=[${vRow.map(v => v.toFixed(3)).join(', ')}]`);
+
+            for (let i = 0; i < imageSize; i++) {
+                componentImage[i] = new Array(imageSize);
+                for (let j = 0; j < imageSize; j++) {
+                    const spatialIndex = i * imageSize + j;
+                    const uValue = currentSVD.U[spatialIndex][componentIndex];
+
+                    // Calculate u_i * sigma_i * v_i^T for this pixel
+                    // Scale back to 0-255 range since input was normalized
+                    const r = uValue * sigma * vRow[0] * 255;
+                    const g = uValue * sigma * vRow[1] * 255;
+                    const b = uValue * sigma * vRow[2] * 255;
+
+                    componentImage[i][j] = [r, g, b];
+                }
+            }
+
+            return componentImage;
+        }
+
+        function drawReconstructions() {
+            drawRankKReconstruction(2, 'rank2Reconstruction');
+            drawRankKReconstruction(3, 'fullReconstruction');
+        }
+
+        function drawRankKReconstruction(k, canvasId) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+
+            // Calculate the rank-k reconstruction by summing the first k components
+            const reconstructedImageData = calculateRankKReconstructionImage(k);
+
+            const imageData = ctx.createImageData(canvasSize, canvasSize);
+
+            for (let i = 0; i < canvasSize; i++) {
+                for (let j = 0; j < canvasSize; j++) {
+                    // Map canvas coordinates to image coordinates
+                    const imgI = Math.floor(i * imageSize / canvasSize);
+                    const imgJ = Math.floor(j * imageSize / canvasSize);
+
+                    const pixelIndex = (i * canvasSize + j) * 4;
+                    const [r, g, b] = reconstructedImageData[imgI][imgJ];
+
+                    // Clamp values to 0-255 range
+                    imageData.data[pixelIndex] = Math.max(0, Math.min(255, r));     // Red
+                    imageData.data[pixelIndex + 1] = Math.max(0, Math.min(255, g)); // Green
+                    imageData.data[pixelIndex + 2] = Math.max(0, Math.min(255, b)); // Blue
+                    imageData.data[pixelIndex + 3] = 255; // Alpha
+                }
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        function calculateRankKReconstructionImage(k) {
+            const reconstructedImage = new Array(imageSize);
+
+            // Initialize with zeros
+            for (let i = 0; i < imageSize; i++) {
+                reconstructedImage[i] = new Array(imageSize);
+                for (let j = 0; j < imageSize; j++) {
+                    reconstructedImage[i][j] = [0, 0, 0];
+                }
+            }
+
+            // Sum the first k components: A_k = sum(u_i * sigma_i * v_i^T)
+            for (let component = 0; component < k; component++) {
+                const sigma = currentSVD.sigma[component];
+                const vRow = currentSVD.VT[component];
+
+                for (let i = 0; i < imageSize; i++) {
+                    for (let j = 0; j < imageSize; j++) {
+                        const spatialIndex = i * imageSize + j;
+                        const uValue = currentSVD.U[spatialIndex][component];
+
+                        // Proper SVD reconstruction: u_i * sigma_i * v_i^T
+                        // Scale back to 0-255 range since input was normalized
+                        reconstructedImage[i][j][0] += uValue * sigma * vRow[0] * 255;
+                        reconstructedImage[i][j][1] += uValue * sigma * vRow[1] * 255;
+                        reconstructedImage[i][j][2] += uValue * sigma * vRow[2] * 255;
+                    }
+                }
+            }
+
+            return reconstructedImage;
+        }
+
+        function updateSigmaValues() {
+            // Update the displayed sigma values
+            document.getElementById('sigma1Value').textContent = currentSVD.sigma[0].toFixed(1);
+            document.getElementById('sigma2Value').textContent = currentSVD.sigma[1].toFixed(1);
+            document.getElementById('sigma3Value').textContent = currentSVD.sigma[2].toFixed(1);
+        }
+
+        function generateNewImage() {
+            generateSimple3ColorImage();
+            performSVD();
+            drawAll();
+        }
+
+        function showDecomposition() {
+            alert('SVD Decomposition:\n\n' +
+                'U: Shows WHERE each pattern appears in the image\n' +
+                'Σ: Shows HOW IMPORTANT each pattern is\n' +
+                'V^T: Shows HOW the RGB colors combine for each pattern\n\n' +
+                'Together: A = U × Σ × V^T reconstructs the original image');
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
