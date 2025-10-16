@@ -41,6 +41,21 @@
             overflow-x: auto;
         }
 
+        .rgb-channels-container {
+            margin-top: 40px;
+            padding: 20px;
+            border-top: 1px solid #e0e0e0;
+            background-color: #f9f9f9;
+        }
+
+        .rgb-visualization-container {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(200px, 1fr));
+            gap: clamp(15px, 3vw, 30px);
+            margin-top: 10px;
+            overflow-x: auto;
+        }
+
         .rank1-container {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
@@ -110,8 +125,6 @@
         }
 
         canvas {
-            border: 2px solid #ddd;
-            border-radius: 5px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             max-width: 100%;
             height: auto;
@@ -296,6 +309,7 @@
             text-align: center;
             margin: 30px 0 10px;
             font-size: 18px;
+            height: 30px;
             font-weight: bold;
             color: #333;
         }
@@ -353,6 +367,11 @@
             .matrix-canvas-container {
                 height: auto;
                 min-height: 150px;
+            }
+
+            .rgb-visualization-container {
+                grid-template-columns: repeat(3, 1fr);
+                gap: clamp(10px, 2vw, 20px);
             }
         }
 
@@ -413,6 +432,11 @@
             h1 {
                 font-size: clamp(18px, 4vw, 24px);
             }
+
+            .rgb-visualization-container {
+                grid-template-columns: repeat(2, 1fr);
+                gap: clamp(10px, 2vw, 15px);
+            }
         }
 
         @media (max-width: 492px) {
@@ -429,6 +453,7 @@
                 order: 1;
                 margin: 5px 0 0;
                 font-size: 16px;
+                height: 25px;
             }
 
             .flattening-note {
@@ -521,6 +546,27 @@
 
             .container {
                 padding: 8px;
+            }
+
+            .rgb-visualization-container {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            /* RGB mode overrides for mobile */
+            .rgb-mode .matrix-section:nth-child(2) .matrix-subtitle::before {
+                content: "A_f:\00a0";
+                font-weight: bold;
+            }
+
+            .rgb-mode .matrix-section:nth-child(3) .matrix-subtitle::before {
+                content: "Σ:\00a0";
+                font-weight: bold;
+            }
+
+            .rgb-mode .matrix-section:nth-child(4) .matrix-subtitle::before {
+                content: "I:\00a0";
+                font-weight: bold;
             }
         }
     </style>
@@ -1133,13 +1179,13 @@
             // Perform actual SVD from scratch
             currentSVD = computeSVDFromScratch(imageMatrix);
 
-            console.log(`SVD Results:\n\tSingular values: ${currentSVD.sigma}\n\tU dimensions: ${currentSVD.U.length} x ${currentSVD.U[0].length}\n\tVT dimensions: ${currentSVD.VT.length} x ${currentSVD.VT[0].length}`);
+            console.log(currentSVD);
         }
 
 
 
         function computeSVDFromScratch(matrix) {
-            const A = new mlMatrix.Matrix(matrix);
+            let A = new mlMatrix.Matrix(matrix);
 
             // Perform SVD
             const svd = new mlMatrix.SingularValueDecomposition(A);
@@ -1191,6 +1237,7 @@
             drawUMatrix();
             drawSigmaMatrix();
             drawVMatrix();
+            drawRGBChannels();
             updateImageTitle();
         }
 
@@ -1269,9 +1316,625 @@
             }
 
             ctx.putImageData(imageData, 0, 0);
+
+            // Setup hover interaction for original image A
+            setupOriginalImageInteraction();
+        }
+
+        function setupOriginalImageInteraction() {
+            const canvas = document.getElementById('originalImage');
+
+            // Remove existing listeners to prevent duplicates
+            canvas.onmouseenter = null;
+            canvas.onmouseleave = null;
+
+            canvas.onmouseenter = function () {
+                if (!hoveredOriginalImage) {
+                    hoveredOriginalImage = true;
+                    drawRGBChannelsInMainMatrices();
+                }
+            };
+
+            canvas.onmousemove = function (event) {
+                if (hoveredOriginalImage) {
+                    const rect = canvas.getBoundingClientRect();
+                    const x = event.clientX - rect.left;
+                    const y = event.clientY - rect.top;
+
+                    // Convert canvas coordinates to image coordinates
+                    const imgX = Math.floor(x * imageSize / canvasSize);
+                    const imgY = Math.floor(y * imageSize / canvasSize);
+
+                    // Get the RGB values at this position
+                    if (imgX >= 0 && imgX < imageSize && imgY >= 0 && imgY < imageSize) {
+                        const [r, g, b] = currentImageData[imgY][imgX];
+                        drawRGBChannelsWithHighlight(imgX, imgY, r, g, b);
+                    }
+                }
+            };
+
+            canvas.onmouseleave = function () {
+                if (hoveredOriginalImage) {
+                    hoveredOriginalImage = false;
+
+                    // Restore U matrix display
+                    const uMatrixContainer = document.querySelector('.matrix-section:nth-child(2) .matrix-canvas-container');
+                    const originalUDisplay = uMatrixContainer.querySelector('div[style*="display: flex"], div[style*="display: none"]');
+                    if (originalUDisplay) {
+                        originalUDisplay.style.display = 'flex';
+                    }
+
+                    // Hide the red overlay canvas
+                    const redOverlayCanvas = document.getElementById('redOverlayCanvas');
+                    if (redOverlayCanvas) {
+                        redOverlayCanvas.style.display = 'none';
+                    }
+
+                    // Restore original titles and subtitles
+                    const mainTitle = document.querySelector('h1');
+                    mainTitle.textContent = 'SVD in Color Space';
+
+                    // Restore original SVD equation
+                    const equation = document.querySelector('.equation');
+                    if (equation) {
+                        equation.innerHTML = 'A<sub>f</sub> = U × Σ × V<sup>T</sup> &nbsp;&nbsp;';
+                    }
+
+                    const uTitle = document.querySelector('.matrix-section:nth-child(2) .matrix-title');
+                    const uSubtitle = document.querySelector('.matrix-section:nth-child(2) .matrix-subtitle');
+                    const sigmaTitle = document.querySelector('.matrix-section:nth-child(3) .matrix-title');
+                    const sigmaSubtitle = document.querySelector('.matrix-section:nth-child(3) .matrix-subtitle');
+                    const vTitle = document.querySelector('.matrix-section:nth-child(4) .matrix-title');
+                    const vSubtitle = document.querySelector('.matrix-section:nth-child(4) .matrix-subtitle');
+
+                    uTitle.innerHTML = 'U';
+                    uTitle.style.color = '';
+                    uSubtitle.innerHTML = 'Spatial Activations [10,000 × 3]';
+
+                    sigmaTitle.innerHTML = 'Σ';
+                    sigmaTitle.style.color = '';
+                    sigmaSubtitle.innerHTML = 'Importance Weights [3 x 3]';
+
+                    vTitle.innerHTML = 'V<sup>T</sup>';
+                    vTitle.style.color = '';
+                    vSubtitle.innerHTML = 'Principal Color Axes [3 x 3]';
+
+                    // Remove RGB mode class for mobile
+                    document.body.classList.remove('rgb-mode');
+
+                    // Clear RGB highlighting state
+                    window.rgbHighlightRows = null;
+
+                    // Restore original matrices
+                    drawUMatrix();
+                    drawSigmaMatrix();
+                    drawVMatrix();
+                    updateULabels();
+                }
+            };
+        }
+
+        function drawRGBChannels() {
+            // Draw Red Channel
+            const redCanvas = document.getElementById('redChannel');
+            const redCtx = redCanvas.getContext('2d');
+            const redImageData = redCtx.createImageData(canvasSize, canvasSize);
+
+            // Draw Green Channel
+            const greenCanvas = document.getElementById('greenChannel');
+            const greenCtx = greenCanvas.getContext('2d');
+            const greenImageData = greenCtx.createImageData(canvasSize, canvasSize);
+
+            // Draw Blue Channel
+            const blueCanvas = document.getElementById('blueChannel');
+            const blueCtx = blueCanvas.getContext('2d');
+            const blueImageData = blueCtx.createImageData(canvasSize, canvasSize);
+
+            for (let i = 0; i < canvasSize; i++) {
+                for (let j = 0; j < canvasSize; j++) {
+                    // Map canvas coordinates to image coordinates
+                    const imgI = Math.floor(i * imageSize / canvasSize);
+                    const imgJ = Math.floor(j * imageSize / canvasSize);
+
+                    const pixelIndex = (i * canvasSize + j) * 4;
+                    const [r, g, b] = currentImageData[imgI][imgJ];
+
+                    // Red channel (grayscale representation of red intensity)
+                    redImageData.data[pixelIndex] = r;     // Red
+                    redImageData.data[pixelIndex + 1] = r; // Green (same as red for grayscale)
+                    redImageData.data[pixelIndex + 2] = r; // Blue (same as red for grayscale)
+                    redImageData.data[pixelIndex + 3] = 255; // Alpha
+
+                    // Green channel (grayscale representation of green intensity)
+                    greenImageData.data[pixelIndex] = g;     // Red (same as green for grayscale)
+                    greenImageData.data[pixelIndex + 1] = g; // Green
+                    greenImageData.data[pixelIndex + 2] = g; // Blue (same as green for grayscale)
+                    greenImageData.data[pixelIndex + 3] = 255; // Alpha
+
+                    // Blue channel (grayscale representation of blue intensity)
+                    blueImageData.data[pixelIndex] = b;     // Red (same as blue for grayscale)
+                    blueImageData.data[pixelIndex + 1] = b; // Green (same as blue for grayscale)
+                    blueImageData.data[pixelIndex + 2] = b; // Blue
+                    blueImageData.data[pixelIndex + 3] = 255; // Alpha
+                }
+            }
+
+            redCtx.putImageData(redImageData, 0, 0);
+            greenCtx.putImageData(greenImageData, 0, 0);
+            blueCtx.putImageData(blueImageData, 0, 0);
+        }
+
+        function drawRGBChannelsInMainMatrices() {
+            // Update main page title
+            const mainTitle = document.querySelector('h1');
+            mainTitle.textContent = 'RGB Channel Decomposition';
+
+            // Change equation to show RGB identity decomposition
+            const equation = document.querySelector('.equation');
+            if (equation) {
+                equation.innerHTML = 'A<sub>f</sub> = A<sub>f</sub> × I &nbsp;&nbsp;';
+            }
+
+            // Show the individual U column matrices and draw RGB channels in them
+            const uMatrixContainer = document.querySelector('.matrix-section:nth-child(2) .matrix-canvas-container');
+
+            // Make sure the original U matrix display is visible
+            const originalUDisplay = uMatrixContainer.querySelector('div[style*="display: flex"], div[style*="display: none"]');
+            if (originalUDisplay) {
+                originalUDisplay.style.display = 'flex';
+            }
+
+            // Hide any existing red overlay canvas
+            const redOverlayCanvas = document.getElementById('redOverlayCanvas');
+            if (redOverlayCanvas) {
+                redOverlayCanvas.style.display = 'none';
+            }
+
+            // Draw Red channel in first U column (uMatrix0)
+            const redCanvas = document.getElementById('uMatrix0');
+            const redCtx = redCanvas.getContext('2d');
+            const redImageData = redCtx.createImageData(120, 120);
+
+            // Draw Green channel in second U column (uMatrix1)
+            const greenCanvas = document.getElementById('uMatrix1');
+            const greenCtx = greenCanvas.getContext('2d');
+            const greenImageData = greenCtx.createImageData(120, 120);
+
+            // Draw Blue channel in third U column (uMatrix2)
+            const blueCanvas = document.getElementById('uMatrix2');
+            const blueCtx = blueCanvas.getContext('2d');
+            const blueImageData = blueCtx.createImageData(120, 120);
+
+            for (let i = 0; i < 120; i++) {
+                for (let j = 0; j < 120; j++) {
+                    const imgI = Math.floor(i * imageSize / 120);
+                    const imgJ = Math.floor(j * imageSize / 120);
+                    const pixelIndex = (i * 120 + j) * 4;
+                    const [r, g, b] = currentImageData[imgI][imgJ];
+
+                    // Red channel (color-tinted)
+                    redImageData.data[pixelIndex] = r;         // Red component
+                    redImageData.data[pixelIndex + 1] = 0;     // No green
+                    redImageData.data[pixelIndex + 2] = 0;     // No blue
+                    redImageData.data[pixelIndex + 3] = 255;   // Alpha
+
+                    // Green channel (color-tinted)
+                    greenImageData.data[pixelIndex] = 0;       // No red
+                    greenImageData.data[pixelIndex + 1] = g;   // Green component
+                    greenImageData.data[pixelIndex + 2] = 0;   // No blue
+                    greenImageData.data[pixelIndex + 3] = 255; // Alpha
+
+                    // Blue channel (color-tinted)
+                    blueImageData.data[pixelIndex] = 0;        // No red
+                    blueImageData.data[pixelIndex + 1] = 0;    // No green
+                    blueImageData.data[pixelIndex + 2] = b;    // Blue component
+                    blueImageData.data[pixelIndex + 3] = 255;  // Alpha
+                }
+            }
+
+            redCtx.putImageData(redImageData, 0, 0);
+            greenCtx.putImageData(greenImageData, 0, 0);
+            blueCtx.putImageData(blueImageData, 0, 0);
+
+            // Update U matrix labels to show RGB channels
+            document.getElementById('uLabel0').innerHTML = 'A<sub>R</sub>';
+            document.getElementById('uShapeInfo0').innerHTML = '→ [100 × 100]';
+            document.getElementById('uLabel1').innerHTML = 'A<sub>G</sub>';
+            document.getElementById('uShapeInfo1').innerHTML = '→ [100 × 100]';
+            document.getElementById('uLabel2').innerHTML = 'A<sub>B</sub>';
+            document.getElementById('uShapeInfo2').innerHTML = '→ [100 × 100]';
+
+            // Update U matrix title and subtitle
+            const uTitle = document.querySelector('.matrix-section:nth-child(2) .matrix-title');
+            const uSubtitle = document.querySelector('.matrix-section:nth-child(2) .matrix-subtitle');
+            uTitle.innerHTML = 'A<sub>f</sub>';
+            uTitle.style.color = '#333';
+            uSubtitle.innerHTML = 'Channel Activations [10,000 x 3]';
+
+            // Calculate variance squared for each color channel
+            const sigmaCanvas = document.getElementById('sigmaMatrix');
+            const sigmaCtx = sigmaCanvas.getContext('2d');
+
+            // Clear canvas with white background (same as original)
+            sigmaCtx.fillStyle = 'white';
+            sigmaCtx.fillRect(0, 0, 200, 200);
+
+            // Calculate variance for each channel across all pixels
+            let redSum = 0, greenSum = 0, blueSum = 0;
+            let redSumSq = 0, greenSumSq = 0, blueSumSq = 0;
+            const totalPixels = imageSize * imageSize;
+
+            for (let i = 0; i < imageSize; i++) {
+                for (let j = 0; j < imageSize; j++) {
+                    const [r, g, b] = currentImageData[i][j];
+
+                    redSum += r;
+                    greenSum += g;
+                    blueSum += b;
+
+                    redSumSq += r * r;
+                    greenSumSq += g * g;
+                    blueSumSq += b * b;
+                }
+            }
+
+            // Calculate variance = E[X²] - (E[X])²
+            const redMean = redSum / totalPixels;
+            const greenMean = greenSum / totalPixels;
+            const blueMean = blueSum / totalPixels;
+
+            const redVariance = (redSumSq / totalPixels) - (redMean * redMean);
+            const greenVariance = (greenSumSq / totalPixels) - (greenMean * greenMean);
+            const blueVariance = (blueSumSq / totalPixels) - (blueMean * blueMean);
+
+            // Take square root to get standard deviation (analogous to singular values)
+            const redStdDev = Math.sqrt(redVariance);
+            const greenStdDev = Math.sqrt(greenVariance);
+            const blueStdDev = Math.sqrt(blueVariance);
+
+            // Use same drawing style as original sigma matrix
+            const stdDevs = [redStdDev, greenStdDev, blueStdDev];
+            const colors = ['#e74c3c', '#27ae60', '#3498db'];
+            const labels = ['R', 'G', 'B'];
+
+            const maxStdDev = Math.max(...stdDevs);
+            const barWidth = 200 / stdDevs.length;
+            const margin = 20;
+
+            for (let i = 0; i < stdDevs.length; i++) {
+                const height = ((stdDevs[i] / maxStdDev) * (200 - 2 * margin));
+                const x = i * barWidth + barWidth * 0.1;
+                const y = 200 - margin - height;
+                const w = barWidth * 0.8;
+
+                // Use channel colors instead of blue/gray
+                sigmaCtx.fillStyle = colors[i];
+                sigmaCtx.fillRect(x, y, w, height);
+
+                // Add value label (same style as original)
+                sigmaCtx.fillStyle = 'black';
+                sigmaCtx.font = '12px Arial';
+                sigmaCtx.textAlign = 'center';
+                sigmaCtx.fillText(stdDevs[i].toFixed(1), i * barWidth + barWidth / 2, 200 - 5);
+                sigmaCtx.fillText(`σ${labels[i]}`, i * barWidth + barWidth / 2, y - 5);
+            }
+
+            // Temporarily replace currentSVD.VT with RGB identity matrix and reuse drawVMatrix()
+            const originalVT = currentSVD.VT;
+
+            // Set RGB identity matrix: [1,0,0], [0,1,0], [0,0,1]
+            currentSVD.VT = [
+                [1, 0, 0], // Red row
+                [0, 1, 0], // Green row  
+                [0, 0, 1]  // Blue row
+            ];
+
+            // Call the existing drawVMatrix function to maintain consistent styling
+            drawVMatrix();
+
+            // Restore original VT matrix
+            currentSVD.VT = originalVT;
+
+            // Update Sigma matrix title and subtitle
+            const sigmaTitle = document.querySelector('.matrix-section:nth-child(3) .matrix-title');
+            const sigmaSubtitle = document.querySelector('.matrix-section:nth-child(3) .matrix-subtitle');
+            sigmaTitle.innerHTML = 'Σ<sub>RGB</sub>';
+            sigmaTitle.style.color = '#333';
+            sigmaSubtitle.innerHTML = 'Standard Deviation [R, G, B]';
+
+            // Update V^T matrix title and subtitle
+            const vTitle = document.querySelector('.matrix-section:nth-child(4) .matrix-title');
+            const vSubtitle = document.querySelector('.matrix-section:nth-child(4) .matrix-subtitle');
+            vTitle.innerHTML = 'I';
+            vTitle.style.color = '#333';
+            vSubtitle.innerHTML = 'RGB Color Axes [3 x 3]';
+
+            // Add special class for mobile RGB display
+            document.body.classList.add('rgb-mode');
+        }
+
+        function drawRGBChannelsWithHighlight(hoverX, hoverY, hoverR, hoverG, hoverB) {
+            // Determine which channels have significant contribution (non-zero or above threshold)
+            const threshold = 10; // Minimum value to consider "contributing"
+            const redActive = hoverR > threshold;
+            const greenActive = hoverG > threshold;
+            const blueActive = hoverB > threshold;
+
+            // Draw Red channel in first U column (uMatrix0) with conditional highlighting
+            const redCanvas = document.getElementById('uMatrix0');
+            const redCtx = redCanvas.getContext('2d');
+            const redImageData = redCtx.createImageData(120, 120);
+
+            // Draw Green channel in second U column (uMatrix1) with conditional highlighting
+            const greenCanvas = document.getElementById('uMatrix1');
+            const greenCtx = greenCanvas.getContext('2d');
+            const greenImageData = greenCtx.createImageData(120, 120);
+
+            // Draw Blue channel in third U column (uMatrix2) with conditional highlighting
+            const blueCanvas = document.getElementById('uMatrix2');
+            const blueCtx = blueCanvas.getContext('2d');
+            const blueImageData = blueCtx.createImageData(120, 120);
+
+            for (let i = 0; i < 120; i++) {
+                for (let j = 0; j < 120; j++) {
+                    const imgI = Math.floor(i * imageSize / 120);
+                    const imgJ = Math.floor(j * imageSize / 120);
+                    const pixelIndex = (i * 120 + j) * 4;
+                    const [r, g, b] = currentImageData[imgI][imgJ];
+
+                    // Red channel with conditional highlighting
+                    if (redActive) {
+                        // Full red channel display
+                        redImageData.data[pixelIndex] = r;         // Red component
+                        redImageData.data[pixelIndex + 1] = 0;     // No green
+                        redImageData.data[pixelIndex + 2] = 0;     // No blue
+                        redImageData.data[pixelIndex + 3] = 255;   // Alpha
+                    } else {
+                        // Grayscale representation showing intensity (white = high intensity)
+                        redImageData.data[pixelIndex] = r;         // Red = intensity
+                        redImageData.data[pixelIndex + 1] = r;     // Green = intensity
+                        redImageData.data[pixelIndex + 2] = r;     // Blue = intensity
+                        redImageData.data[pixelIndex + 3] = 255;   // Alpha
+                    }
+
+                    // Green channel with conditional highlighting
+                    if (greenActive) {
+                        // Full green channel display
+                        greenImageData.data[pixelIndex] = 0;       // No red
+                        greenImageData.data[pixelIndex + 1] = g;   // Green component
+                        greenImageData.data[pixelIndex + 2] = 0;   // No blue
+                        greenImageData.data[pixelIndex + 3] = 255; // Alpha
+                    } else {
+                        // Grayscale representation showing intensity (white = high intensity)
+                        greenImageData.data[pixelIndex] = g;       // Red = intensity
+                        greenImageData.data[pixelIndex + 1] = g;   // Green = intensity
+                        greenImageData.data[pixelIndex + 2] = g;   // Blue = intensity
+                        greenImageData.data[pixelIndex + 3] = 255; // Alpha
+                    }
+
+                    // Blue channel with conditional highlighting
+                    if (blueActive) {
+                        // Full blue channel display
+                        blueImageData.data[pixelIndex] = 0;        // No red
+                        blueImageData.data[pixelIndex + 1] = 0;    // No green
+                        blueImageData.data[pixelIndex + 2] = b;    // Blue component
+                        blueImageData.data[pixelIndex + 3] = 255;  // Alpha
+                    } else {
+                        // Grayscale representation showing intensity (white = high intensity)
+                        blueImageData.data[pixelIndex] = b;        // Red = intensity
+                        blueImageData.data[pixelIndex + 1] = b;    // Green = intensity
+                        blueImageData.data[pixelIndex + 2] = b;    // Blue = intensity
+                        blueImageData.data[pixelIndex + 3] = 255;  // Alpha
+                    }
+                }
+            }
+
+            redCtx.putImageData(redImageData, 0, 0);
+            greenCtx.putImageData(greenImageData, 0, 0);
+            blueCtx.putImageData(blueImageData, 0, 0);
+
+            // Add highlight cursors at hover position for active channels
+            const cursorX = hoverX * 120 / imageSize;
+            const cursorY = hoverY * 120 / imageSize;
+
+            if (redActive) {
+                redCtx.strokeStyle = '#fff';
+                redCtx.lineWidth = 2;
+                redCtx.strokeRect(cursorX - 2, cursorY - 2, 4, 4);
+            }
+
+            if (greenActive) {
+                greenCtx.strokeStyle = '#fff';
+                greenCtx.lineWidth = 2;
+                greenCtx.strokeRect(cursorX - 2, cursorY - 2, 4, 4);
+            }
+
+            if (blueActive) {
+                blueCtx.strokeStyle = '#fff';
+                blueCtx.lineWidth = 2;
+                blueCtx.strokeRect(cursorX - 2, cursorY - 2, 4, 4);
+            }
+
+            // Update labels to show current pixel values and activity status
+            const redLabel = document.getElementById('uLabel0');
+            const greenLabel = document.getElementById('uLabel1');
+            const blueLabel = document.getElementById('uLabel2');
+
+            // Also update shape info
+            const redShapeInfo = document.getElementById('uShapeInfo0');
+            const greenShapeInfo = document.getElementById('uShapeInfo1');
+            const blueShapeInfo = document.getElementById('uShapeInfo2');
+
+            // Calculate dynamic colors based on RGB identity matrix (same as sigma bars)
+            const rgbIdentityRows = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+            const labels = [redLabel, greenLabel, blueLabel];
+            const shapeInfos = [redShapeInfo, greenShapeInfo, blueShapeInfo];
+            const activeStates = [redActive, greenActive, blueActive];
+            const values = [hoverR, hoverG, hoverB];
+            const subscripts = ['R', 'G', 'B'];
+
+            for (let i = 0; i < 3; i++) {
+
+                let labelColor = '#333';
+                let shapeInfoColor = '#666';
+                if (activeStates[i]) {
+                    const row = rgbIdentityRows[i];
+                    const rVal = Math.abs(row[0]);
+                    const gVal = Math.abs(row[1]);
+                    const bVal = Math.abs(row[2]);
+
+                    // Normalize to 0-255 range for color display
+                    const maxVal = Math.max(rVal, gVal, bVal);
+                    let r = Math.floor((rVal / maxVal) * 255);
+                    let g = Math.floor((gVal / maxVal) * 255);
+                    let b = Math.floor((bVal / maxVal) * 255);
+
+                    // Calculate luminance using standard formula
+                    const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+
+                    // If the color is too light (luminance > 127), darken it for better contrast
+                    if (luminance > 127) {
+                        // Darken more aggressively by reducing all components proportionally
+                        const darkenFactor = 0.7;
+                        r = Math.floor(r * darkenFactor);
+                        g = Math.floor(g * darkenFactor);
+                        b = Math.floor(b * darkenFactor);
+                    }
+
+                    labelColor = `rgb(${r}, ${g}, ${b})`;
+
+                    labels[i].innerHTML = `a<sub>f${i + 1}</sub>e<sub>${i + 1}</sub><sup>T</sup>`;
+                    shapeInfos[i].innerHTML = `[100 × 100 x 3]`;
+                    shapeInfos[i].style.color = labelColor;
+                }
+                else {
+                    labels[i].innerHTML = `A<sub>f [:,${i + 1}]</sub>`;
+                    shapeInfos[i].innerHTML = '→ [100 × 100]';
+                    shapeInfos[i].style.color = shapeInfoColor;
+                }
+                labels[i].style.color = labelColor;
+            }
+
+            // Update sigma bars with highlighting based on active channels
+            drawRGBSigmaWithHighlight(redActive, greenActive, blueActive, hoverR, hoverG, hoverB);
+
+            // Update V^T matrix with highlighting based on active channels
+            // Save the original hoveredVTRow state
+            const originalHoveredVTRow = hoveredVTRow;
+
+            // Set highlighting based on which color channels are active
+            // Since hoveredVTRow can only highlight one row at a time, we need a different approach
+            // Let's create a custom highlighting system for multiple rows
+            window.rgbHighlightRows = {
+                red: redActive,
+                green: greenActive,
+                blue: blueActive
+            };
+
+            // For now, set hoveredVTRow to -1 and modify drawVMatrix to check our custom highlighting
+            hoveredVTRow = -1;
+
+            // Draw V^T matrix with RGB identity and highlighting
+            const originalVT = currentSVD.VT;
+            currentSVD.VT = [
+                [1, 0, 0], // Red row
+                [0, 1, 0], // Green row  
+                [0, 0, 1]  // Blue row
+            ];
+            drawVMatrix();
+            currentSVD.VT = originalVT;
+
+            // Restore original hoveredVTRow state
+            hoveredVTRow = originalHoveredVTRow;
+        }
+
+        function drawRGBSigmaWithHighlight(redActive, greenActive, blueActive, hoverR, hoverG, hoverB) {
+            // Get the sigma canvas and recalculate the RGB standard deviations
+            const sigmaCanvas = document.getElementById('sigmaMatrix');
+            const sigmaCtx = sigmaCanvas.getContext('2d');
+
+            // Clear canvas with white background
+            sigmaCtx.fillStyle = 'white';
+            sigmaCtx.fillRect(0, 0, 200, 200);
+
+            // Recalculate RGB standard deviations (same as in drawRGBChannelsInMainMatrices)
+            let redSum = 0, greenSum = 0, blueSum = 0;
+            let redSumSq = 0, greenSumSq = 0, blueSumSq = 0;
+            const totalPixels = imageSize * imageSize;
+
+            for (let i = 0; i < imageSize; i++) {
+                for (let j = 0; j < imageSize; j++) {
+                    const [r, g, b] = currentImageData[i][j];
+
+                    redSum += r;
+                    greenSum += g;
+                    blueSum += b;
+
+                    redSumSq += r * r;
+                    greenSumSq += g * g;
+                    blueSumSq += b * b;
+                }
+            }
+
+            const redMean = redSum / totalPixels;
+            const greenMean = greenSum / totalPixels;
+            const blueMean = blueSum / totalPixels;
+
+            const redVariance = (redSumSq / totalPixels) - (redMean * redMean);
+            const greenVariance = (greenSumSq / totalPixels) - (greenMean * greenMean);
+            const blueVariance = (blueSumSq / totalPixels) - (blueMean * blueMean);
+
+            const redStdDev = Math.sqrt(redVariance);
+            const greenStdDev = Math.sqrt(greenVariance);
+            const blueStdDev = Math.sqrt(blueVariance);
+
+            const stdDevs = [redStdDev, greenStdDev, blueStdDev];
+            const activeStates = [redActive, greenActive, blueActive];
+            const labels = ['R', 'G', 'B'];
+
+            const maxStdDev = Math.max(...stdDevs);
+            const barWidth = 200 / stdDevs.length;
+            const margin = 20;
+
+            for (let i = 0; i < stdDevs.length; i++) {
+                const height = ((stdDevs[i] / maxStdDev) * (200 - 2 * margin));
+                const x = i * barWidth + barWidth * 0.1;
+                const y = 200 - margin - height;
+                const w = barWidth * 0.8;
+
+                // Calculate dynamic color based on RGB identity matrix (same approach as SVD sigma bars)
+                let barColor = '#999'; // Default gray
+                if (activeStates[i]) {
+                    // For RGB mode, we use the RGB identity matrix rows: [1,0,0], [0,1,0], [0,0,1]
+                    const rgbIdentityRows = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+                    const row = rgbIdentityRows[i];
+                    const rVal = Math.abs(row[0]);
+                    const gVal = Math.abs(row[1]);
+                    const bVal = Math.abs(row[2]);
+
+                    // Normalize to 0-255 range for color display
+                    const maxVal = Math.max(rVal, gVal, bVal);
+                    const r = Math.floor((rVal / maxVal) * 255);
+                    const g = Math.floor((gVal / maxVal) * 255);
+                    const b = Math.floor((bVal / maxVal) * 255);
+
+                    barColor = `rgb(${r}, ${g}, ${b})`;
+                }
+
+                sigmaCtx.fillStyle = barColor;
+                sigmaCtx.fillRect(x, y, w, height);
+
+                // Add value label (same style as original)
+                sigmaCtx.fillStyle = 'black';
+                sigmaCtx.font = '12px Arial';
+                sigmaCtx.textAlign = 'center';
+                sigmaCtx.fillText(stdDevs[i].toFixed(1), i * barWidth + barWidth / 2, 200 - 5);
+                sigmaCtx.fillText(`σ${labels[i]}`, i * barWidth + barWidth / 2, y - 5);
+            }
         }
 
         let hoveredVTRow = -1; // Track which V^T row is being hovered
+        let hoveredOriginalImage = false; // Track if hovering over original image A
 
         function updateULabels() {
             for (let i = 0; i < 3; i++) {
@@ -1280,10 +1943,36 @@
                 const isActive = (hoveredVTRow === i) ||
                     (isRankSliderActive && i < currentRank) ||
                     (window.showFullRankHighlight && i < 3); if (isActive) {
+                        // Calculate dynamic color based on V^T row (same as sigma bars)
+                        const row = currentSVD.VT[i];
+                        const rVal = Math.abs(row[0]);
+                        const gVal = Math.abs(row[1]);
+                        const bVal = Math.abs(row[2]);
+
+                        // Normalize to 0-255 range for color display
+                        const maxVal = Math.max(rVal, gVal, bVal);
+                        let r = Math.floor((rVal / maxVal) * 255);
+                        let g = Math.floor((gVal / maxVal) * 255);
+                        let b = Math.floor((bVal / maxVal) * 255);
+
+                        // Calculate luminance using standard formula
+                        const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+
+                        // If the color is too light (luminance > 127), darken it for better contrast
+                        if (luminance > 127) {
+                            // Darken more aggressively by reducing all components proportionally
+                            const darkenFactor = 0.7;
+                            r = Math.floor(r * darkenFactor);
+                            g = Math.floor(g * darkenFactor);
+                            b = Math.floor(b * darkenFactor);
+                        }
+
+                        const dynamicColor = `rgb(${r}, ${g}, ${b})`;
+
                         label.innerHTML = `σ<sub>${i + 1}</sub>u<sub>${i + 1}</sub>v<sub>${i + 1}</sub><sup>T</sup>`;
-                        label.style.color = '#007bff';
-                        shapeInfo.innerHTML = `→ [100 × 100]`;
-                        shapeInfo.style.color = '#007bff';
+                        label.style.color = dynamicColor;
+                        shapeInfo.innerHTML = `[100 × 100 x 3]`;
+                        shapeInfo.style.color = dynamicColor;
                     } else {
                     label.innerHTML = `U<sub>:,${i + 1}</sub>`;
                     label.style.color = '#333';
@@ -1404,10 +2093,25 @@
                 const y = canvasSize - margin - height;
                 const w = barWidth * 0.8;
 
-                // Color bar blue if this component is hovered or part of current rank approximation, gray otherwise
-                ctx.fillStyle = (hoveredVTRow === i) ||
-                    (isRankSliderActive && i < currentRank) ||
-                    (window.showFullRankHighlight && i < 3) ? '#007bff' : '#999';
+                // Calculate the color for this singular value based on corresponding V^T row
+                let barColor = '#999'; // Default gray
+                if ((hoveredVTRow === i) || (isRankSliderActive && i < currentRank) || (window.showFullRankHighlight && i < 3)) {
+                    // Get the RGB values for this V^T row (how this component mixes colors)
+                    const row = currentSVD.VT[i];
+                    const rVal = Math.abs(row[0]);
+                    const gVal = Math.abs(row[1]);
+                    const bVal = Math.abs(row[2]);
+
+                    // Normalize to 0-255 range for color display
+                    const maxVal = Math.max(rVal, gVal, bVal);
+                    const r = Math.floor((rVal / maxVal) * 255);
+                    const g = Math.floor((gVal / maxVal) * 255);
+                    const b = Math.floor((bVal / maxVal) * 255);
+
+                    barColor = `rgb(${r}, ${g}, ${b})`;
+                }
+
+                ctx.fillStyle = barColor;
                 ctx.fillRect(x, y, w, height);
 
                 // Add value label
@@ -1535,9 +2239,16 @@
 
             // Draw shadow box around hovered row or active rank components
             for (let i = 0; i < 3; i++) {
+                // Check for RGB-specific highlighting when displaying RGB identity matrix
+                const isRGBHighlighted = window.rgbHighlightRows &&
+                    ((i === 0 && window.rgbHighlightRows.red) ||
+                        (i === 1 && window.rgbHighlightRows.green) ||
+                        (i === 2 && window.rgbHighlightRows.blue));
+
                 const shouldHighlight = (hoveredVTRow === i) ||
                     (isRankSliderActive && i < currentRank) ||
-                    (window.showFullRankHighlight && i < 3); if (shouldHighlight) {
+                    (window.showFullRankHighlight && i < 3) ||
+                    isRGBHighlighted; if (shouldHighlight) {
                         const rowY = i * cellSize;
                         const margin = 6; // Margin to keep shadow within canvas bounds
 
