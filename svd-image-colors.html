@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SVD Visualization with 3-Color Image</title>
+    <title>SVD in Color Space</title>
     <script src="https://cdn.jsdelivr.net/npm/ml-matrix@6.12.1/matrix.umd.min.js"></script>
     <style>
         body {
@@ -301,6 +301,14 @@
 
         /* Responsive design */
         @media (max-width: 1016px) {
+
+            h1,
+            .equation,
+            .flattening-note {
+                margin: 0;
+            }
+
+
             .visualization-container {
                 display: grid;
                 grid-template-columns: repeat(3, 1fr);
@@ -407,10 +415,31 @@
         }
 
         @media (max-width: 492px) {
+            .container {
+                display: flex;
+                flex-direction: column;
+            }
+
+            h1 {
+                order: 0;
+            }
+
+            .equation {
+                order: 1;
+                margin: 5px 0 0;
+                font-size: 16px;
+            }
+
+            .flattening-note {
+                order: 2;
+                font-size: 11px;
+            }
+
             .visualization-container {
                 grid-template-columns: 1fr;
                 grid-template-rows: auto;
                 gap: 0;
+                order: 3;
             }
 
             .matrix-section:first-child,
@@ -498,7 +527,7 @@
 
 <body>
     <div class="container">
-        <h1>SVD Decomposition: Flattened Image Matrix A<sub>f</sub></h1>
+        <h1>SVD in Color Space</h1>
 
         <div class="visualization-container">
             <div class="matrix-section">
@@ -511,7 +540,7 @@
 
             <div class="matrix-section">
                 <div class="matrix-title">U</div>
-                <div class="matrix-subtitle">Spatial Patterns [10,000 × 3]</div>
+                <div class="matrix-subtitle">Spatial Features [10,000 × 3]</div>
                 <div class="matrix-canvas-container">
                     <div style="display: flex; gap: 10px; justify-content: center;">
                         <div style="text-align: center;">
