@@ -41,51 +41,6 @@
             overflow-x: auto;
         }
 
-        .rgb-channels-container {
-            margin-top: 40px;
-            padding: 20px;
-            border-top: 1px solid #e0e0e0;
-            background-color: #f9f9f9;
-        }
-
-        .rgb-visualization-container {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(200px, 1fr));
-            gap: clamp(15px, 3vw, 30px);
-            margin-top: 10px;
-            overflow-x: auto;
-        }
-
-        .rank1-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 30px;
-            margin-top: 30px;
-        }
-
-        .rank1-title {
-            text-align: center;
-            font-size: 20px;
-            font-weight: bold;
-            margin: 30px 0 20px 0;
-            color: #333;
-        }
-
-        .reconstruction-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            margin-top: 30px;
-        }
-
-        .reconstruction-title {
-            text-align: center;
-            font-size: 20px;
-            font-weight: bold;
-            margin: 30px 0 20px 0;
-            color: #333;
-        }
-
         .matrix-section {
             text-align: center;
             display: flex;
@@ -143,19 +98,6 @@
             justify-content: center;
             flex-grow: 1;
             /* Take remaining space */
-        }
-
-        .color-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .color-box {
-            width: 20px;
-            height: 20px;
-            border: 1px solid #ccc;
-            border-radius: 3px;
         }
 
         .controls {
@@ -368,11 +310,6 @@
                 height: auto;
                 min-height: 150px;
             }
-
-            .rgb-visualization-container {
-                grid-template-columns: repeat(3, 1fr);
-                gap: clamp(10px, 2vw, 20px);
-            }
         }
 
         @media (max-width: 705px) {
@@ -431,11 +368,6 @@
 
             h1 {
                 font-size: clamp(18px, 4vw, 24px);
-            }
-
-            .rgb-visualization-container {
-                grid-template-columns: repeat(2, 1fr);
-                gap: clamp(10px, 2vw, 15px);
             }
         }
 
@@ -546,11 +478,6 @@
 
             .container {
                 padding: 8px;
-            }
-
-            .rgb-visualization-container {
-                grid-template-columns: 1fr;
-                gap: 15px;
             }
 
             /* RGB mode overrides for mobile */
