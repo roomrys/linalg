@@ -833,27 +833,7 @@
             drawVMatrix();
             updateULabels();
         }        // Briefly highlight all components at full rank, then fade to default
-        function brieflyHighlightFullRank() {
-            // Temporarily set a flag to force highlighting
-            window.showFullRankHighlight = true;
 
-            // Redraw with highlighting
-            drawOriginalImageWithRank();
-            drawUMatrix();
-            drawSigmaMatrix();
-            drawVMatrix();
-            updateULabels();
-
-            // After 1200ms, fade to default appearance
-            setTimeout(() => {
-                window.showFullRankHighlight = false;
-                drawOriginalImageWithRank();
-                drawUMatrix();
-                drawSigmaMatrix();
-                drawVMatrix();
-                updateULabels();
-            }, 400);
-        }        // Update image subtitle based on current rank
         function updateImageTitle() {
             const subtitleElement = document.querySelector('.matrix-subtitle');
             const actualRank = Math.min(currentColorComplexity, 3); // Actual rank of the image
@@ -1160,10 +1140,6 @@
             }
         }
 
-        function generateSimple3ColorImage() {
-            generateComplexImage(3, 3);
-        }
-
         function performSVD() {
             // Convert the 3D image array (100x100x3) into a 2D matrix (10000x3)
             // Each row represents a pixel with its RGB values
@@ -1237,32 +1213,7 @@
             drawUMatrix();
             drawSigmaMatrix();
             drawVMatrix();
-            drawRGBChannels();
             updateImageTitle();
-        }
-
-        function drawOriginalImage() {
-            const canvas = document.getElementById('originalImage');
-            const ctx = canvas.getContext('2d');
-            const imageData = ctx.createImageData(canvasSize, canvasSize);
-
-            for (let i = 0; i < canvasSize; i++) {
-                for (let j = 0; j < canvasSize; j++) {
-                    // Map canvas coordinates to image coordinates
-                    const imgI = Math.floor(i * imageSize / canvasSize);
-                    const imgJ = Math.floor(j * imageSize / canvasSize);
-
-                    const pixelIndex = (i * canvasSize + j) * 4;
-                    const [r, g, b] = currentImageData[imgI][imgJ];
-
-                    imageData.data[pixelIndex] = r;     // Red
-                    imageData.data[pixelIndex + 1] = g; // Green
-                    imageData.data[pixelIndex + 2] = b; // Blue
-                    imageData.data[pixelIndex + 3] = 255; // Alpha
-                }
-            }
-
-            ctx.putImageData(imageData, 0, 0);
         }
 
         function drawOriginalImageWithRank() {
@@ -1412,56 +1363,6 @@
                     updateULabels();
                 }
             };
-        }
-
-        function drawRGBChannels() {
-            // Draw Red Channel
-            const redCanvas = document.getElementById('redChannel');
-            const redCtx = redCanvas.getContext('2d');
-            const redImageData = redCtx.createImageData(canvasSize, canvasSize);
-
-            // Draw Green Channel
-            const greenCanvas = document.getElementById('greenChannel');
-            const greenCtx = greenCanvas.getContext('2d');
-            const greenImageData = greenCtx.createImageData(canvasSize, canvasSize);
-
-            // Draw Blue Channel
-            const blueCanvas = document.getElementById('blueChannel');
-            const blueCtx = blueCanvas.getContext('2d');
-            const blueImageData = blueCtx.createImageData(canvasSize, canvasSize);
-
-            for (let i = 0; i < canvasSize; i++) {
-                for (let j = 0; j < canvasSize; j++) {
-                    // Map canvas coordinates to image coordinates
-                    const imgI = Math.floor(i * imageSize / canvasSize);
-                    const imgJ = Math.floor(j * imageSize / canvasSize);
-
-                    const pixelIndex = (i * canvasSize + j) * 4;
-                    const [r, g, b] = currentImageData[imgI][imgJ];
-
-                    // Red channel (grayscale representation of red intensity)
-                    redImageData.data[pixelIndex] = r;     // Red
-                    redImageData.data[pixelIndex + 1] = r; // Green (same as red for grayscale)
-                    redImageData.data[pixelIndex + 2] = r; // Blue (same as red for grayscale)
-                    redImageData.data[pixelIndex + 3] = 255; // Alpha
-
-                    // Green channel (grayscale representation of green intensity)
-                    greenImageData.data[pixelIndex] = g;     // Red (same as green for grayscale)
-                    greenImageData.data[pixelIndex + 1] = g; // Green
-                    greenImageData.data[pixelIndex + 2] = g; // Blue (same as green for grayscale)
-                    greenImageData.data[pixelIndex + 3] = 255; // Alpha
-
-                    // Blue channel (grayscale representation of blue intensity)
-                    blueImageData.data[pixelIndex] = b;     // Red (same as blue for grayscale)
-                    blueImageData.data[pixelIndex + 1] = b; // Green (same as blue for grayscale)
-                    blueImageData.data[pixelIndex + 2] = b; // Blue
-                    blueImageData.data[pixelIndex + 3] = 255; // Alpha
-                }
-            }
-
-            redCtx.putImageData(redImageData, 0, 0);
-            greenCtx.putImageData(greenImageData, 0, 0);
-            blueCtx.putImageData(blueImageData, 0, 0);
         }
 
         function drawRGBChannelsInMainMatrices() {
@@ -2331,147 +2232,6 @@
                     updateULabels(); // Reset labels to original text
                 }
             };
-        }
-
-        function drawRank1Components() {
-            for (let component = 0; component < 3; component++) {
-                drawRank1Component(component);
-            }
-        }
-
-        function drawRank1Component(componentIndex) {
-            const canvas = document.getElementById(`rank1Component${componentIndex + 1}`);
-            const ctx = canvas.getContext('2d');
-
-            // Calculate the rank-1 component: u_i * sigma_i * v_i^T
-            const componentImageData = calculateRank1ComponentImage(componentIndex);
-
-            const imageData = ctx.createImageData(canvasSize, canvasSize);
-
-            for (let i = 0; i < canvasSize; i++) {
-                for (let j = 0; j < canvasSize; j++) {
-                    // Map canvas coordinates to image coordinates
-                    const imgI = Math.floor(i * imageSize / canvasSize);
-                    const imgJ = Math.floor(j * imageSize / canvasSize);
-
-                    const pixelIndex = (i * canvasSize + j) * 4;
-                    const [r, g, b] = componentImageData[imgI][imgJ];
-
-                    // Clamp values to 0-255 range
-                    imageData.data[pixelIndex] = Math.max(0, Math.min(255, r));     // Red
-                    imageData.data[pixelIndex + 1] = Math.max(0, Math.min(255, g)); // Green
-                    imageData.data[pixelIndex + 2] = Math.max(0, Math.min(255, b)); // Blue
-                    imageData.data[pixelIndex + 3] = 255; // Alpha
-                }
-            }
-
-            ctx.putImageData(imageData, 0, 0);
-        }
-
-        function calculateRank1ComponentImage(componentIndex) {
-            const componentImage = new Array(imageSize);
-            const sigma = currentSVD.sigma[componentIndex];
-            const vRow = currentSVD.VT[componentIndex];
-
-            for (let i = 0; i < imageSize; i++) {
-                componentImage[i] = new Array(imageSize);
-                for (let j = 0; j < imageSize; j++) {
-                    const spatialIndex = i * imageSize + j;
-                    const uValue = currentSVD.U[spatialIndex][componentIndex];
-
-                    // Calculate u_i * sigma_i * v_i^T for this pixel
-                    // Scale back to 0-255 range since input was normalized
-                    const r = uValue * sigma * vRow[0] * 255;
-                    const g = uValue * sigma * vRow[1] * 255;
-                    const b = uValue * sigma * vRow[2] * 255;
-
-                    componentImage[i][j] = [r, g, b];
-                }
-            }
-
-            return componentImage;
-        }
-
-        function drawReconstructions() {
-            drawRankKReconstruction(2, 'rank2Reconstruction');
-            drawRankKReconstruction(3, 'fullReconstruction');
-        }
-
-        function drawRankKReconstruction(k, canvasId) {
-            const canvas = document.getElementById(canvasId);
-            const ctx = canvas.getContext('2d');
-
-            // Calculate the rank-k reconstruction by summing the first k components
-            const reconstructedImageData = calculateRankKReconstructionImage(k);
-
-            const imageData = ctx.createImageData(canvasSize, canvasSize);
-
-            for (let i = 0; i < canvasSize; i++) {
-                for (let j = 0; j < canvasSize; j++) {
-                    // Map canvas coordinates to image coordinates
-                    const imgI = Math.floor(i * imageSize / canvasSize);
-                    const imgJ = Math.floor(j * imageSize / canvasSize);
-
-                    const pixelIndex = (i * canvasSize + j) * 4;
-                    const [r, g, b] = reconstructedImageData[imgI][imgJ];
-
-                    // Clamp values to 0-255 range
-                    imageData.data[pixelIndex] = Math.max(0, Math.min(255, r));     // Red
-                    imageData.data[pixelIndex + 1] = Math.max(0, Math.min(255, g)); // Green
-                    imageData.data[pixelIndex + 2] = Math.max(0, Math.min(255, b)); // Blue
-                    imageData.data[pixelIndex + 3] = 255; // Alpha
-                }
-            }
-
-            ctx.putImageData(imageData, 0, 0);
-        }
-
-        function calculateRankKReconstructionImage(k) {
-            const reconstructedImage = new Array(imageSize);
-
-            // Initialize with zeros
-            for (let i = 0; i < imageSize; i++) {
-                reconstructedImage[i] = new Array(imageSize);
-                for (let j = 0; j < imageSize; j++) {
-                    reconstructedImage[i][j] = [0, 0, 0];
-                }
-            }
-
-            // Sum the first k components: A_k = sum(u_i * sigma_i * v_i^T)
-            for (let component = 0; component < k; component++) {
-                const sigma = currentSVD.sigma[component];
-                const vRow = currentSVD.VT[component];
-
-                for (let i = 0; i < imageSize; i++) {
-                    for (let j = 0; j < imageSize; j++) {
-                        const spatialIndex = i * imageSize + j;
-                        const uValue = currentSVD.U[spatialIndex][component];
-
-                        // Proper SVD reconstruction: u_i * sigma_i * v_i^T
-                        // Scale back to 0-255 range since input was normalized
-                        reconstructedImage[i][j][0] += uValue * sigma * vRow[0] * 255;
-                        reconstructedImage[i][j][1] += uValue * sigma * vRow[1] * 255;
-                        reconstructedImage[i][j][2] += uValue * sigma * vRow[2] * 255;
-                    }
-                }
-            }
-
-            return reconstructedImage;
-        }
-
-        function updateSigmaValues() {
-            // Update the displayed sigma values
-            document.getElementById('sigma1Value').textContent = currentSVD.sigma[0].toFixed(1);
-            document.getElementById('sigma2Value').textContent = currentSVD.sigma[1].toFixed(1);
-            document.getElementById('sigma3Value').textContent = currentSVD.sigma[2].toFixed(1);
-        }
-
-        function generateNewImage() {
-            // Generate completely new shapes when user clicks "Generate New Pattern"
-            fixedShapes = generateShapes(currentShapeComplexity, []);
-            generateComplexImage(currentColorComplexity, currentShapeComplexity);
-            performSVD();
-            drawAll();
         }
 
         init();
