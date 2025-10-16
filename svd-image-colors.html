@@ -9,32 +9,35 @@
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 20px;
-            padding-bottom: 180px;
-            /* Space for floating controls */
+            margin: 5px;
+            padding-bottom: 80px;
+            /* Match reduced slider height */
             background-color: #f5f5f5;
+            box-sizing: border-box;
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 100%;
             margin: 0 auto;
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            min-height: calc(100vh - 100px);
+            /* 100vh - padding-bottom - margins */
+            box-sizing: border-box;
+            overflow-x: auto;
         }
 
         h1 {
             text-align: center;
             color: #333;
-            margin-bottom: 30px;
+            margin-bottom: 10px;
         }
 
         .visualization-container {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr;
-            gap: 30px;
-            margin-top: 30px;
+            grid-template-columns: repeat(4, minmax(200px, 1fr));
+            gap: clamp(15px, 3vw, 30px);
+            margin-top: 10px;
+            overflow-x: auto;
         }
 
         .rank1-container {
@@ -69,25 +72,48 @@
 
         .matrix-section {
             text-align: center;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
         }
 
         .matrix-title {
             font-size: 18px;
             font-weight: bold;
-            margin-bottom: 15px;
             color: #333;
+            height: 20px;
+            /* Fixed height for alignment */
+            text-align: center;
+            line-height: 16px;
+            padding-top: 17px;
         }
 
         .matrix-subtitle {
             font-size: 14px;
             color: #666;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+            height: 40px;
+            /* Fixed height for alignment */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .matrix-canvas-container {
+            height: 200px;
+            /* Fixed height for canvas area */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
         }
 
         canvas {
             border: 2px solid #ddd;
             border-radius: 5px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            max-width: 100%;
+            height: auto;
         }
 
         .matrix-info {
@@ -96,6 +122,13 @@
             background-color: #f8f9fa;
             border-radius: 5px;
             font-size: 14px;
+            min-height: 80px;
+            /* Ensure consistent height */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            flex-grow: 1;
+            /* Take remaining space */
         }
 
         .color-item {
@@ -117,21 +150,27 @@
             left: 0;
             right: 0;
             z-index: 1000;
-            text-align: center;
-            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 15px;
             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
             border-top: 2px solid #007bff;
             box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
             backdrop-filter: blur(10px);
+            height: 80px;
+            /* Minimal height for low profile */
+            box-sizing: border-box;
         }
 
         .slider-container {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin: 5px auto;
-            max-width: 600px;
+            grid-template-columns: repeat(3, minmax(150px, 1fr));
+            gap: clamp(10px, 2vw, 15px);
+            margin: 0;
+            max-width: min(800px, 90vw);
             text-align: left;
+            width: 100%;
         }
 
         .slider-group {
@@ -223,128 +262,167 @@
             background-color: #0056b3;
         }
 
+        .flattening-note {
+            text-align: center;
+            margin: 15px 0 5px 0;
+            font-size: 14px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .u-column-label {
+            font-size: 12px;
+            font-weight: bold;
+            color: #333;
+            margin-top: 3px;
+            height: 22px;
+            line-height: 14px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-align: center;
+            padding-top: 2px;
+        }
+
+        .u-column-info {
+            font-size: 10px;
+            color: #666;
+            margin-top: 2px;
+            height: 14px;
+            line-height: 14px;
+        }
+
         .equation {
             text-align: center;
-            margin: 30px 0;
+            margin: 30px 0 10px;
             font-size: 18px;
             font-weight: bold;
             color: #333;
+        }
+
+        /* Responsive design */
+        @media (max-width: 920px) {
+            .visualization-container {
+                grid-template-columns: repeat(2, 1fr);
+                gap: clamp(10px, 2vw, 20px);
+            }
+
+            .matrix-canvas-container {
+                height: auto;
+                min-height: 150px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .visualization-container {
+                grid-template-columns: 1fr;
+                gap: clamp(10px, 3vw, 15px);
+            }
+
+            .slider-container {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .controls {
+                height: auto;
+                min-height: 80px;
+                padding: 10px 15px;
+            }
+
+            body {
+                padding-bottom: 120px;
+                /* Adjust for taller mobile controls */
+            }
+
+            h1 {
+                font-size: clamp(18px, 4vw, 24px);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+
+            .matrix-title {
+                font-size: clamp(14px, 4vw, 18px);
+                height: 40px;
+                padding-top: 12px;
+            }
+
+            .matrix-subtitle {
+                font-size: clamp(11px, 3vw, 14px);
+                height: 30px;
+            }
         }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <h1>SVD Decomposition of a 3-Color Image</h1>
-
-        <div class="equation">
-            A = U × Σ × V<sup>T</sup>
-        </div>
+        <h1>SVD Decomposition: Flattened Image Matrix A<sub>f</sub></h1>
 
         <div class="visualization-container">
             <div class="matrix-section">
-                <div class="matrix-title">Original Image (A)</div>
-                <div class="matrix-subtitle">100×100×3 RGB Image</div>
-                <canvas id="originalImage" width="200" height="200"></canvas>
-                <div class="matrix-info">
-                    <div><strong>Dimensions:</strong> 100 × 100 × 3</div>
-                    <div><strong>Colors:</strong> Red, Green, Blue</div>
+                <div class="matrix-title">A</div>
+                <div class="matrix-subtitle">Original [100×100×3]</div>
+                <div class="matrix-canvas-container">
+                    <canvas id="originalImage" width="200" height="200"></canvas>
                 </div>
             </div>
 
             <div class="matrix-section">
-                <div class="matrix-title">U Matrix</div>
-                <div class="matrix-subtitle">Spatial Patterns (Left Singular Vectors)</div>
-                <canvas id="uMatrix" width="200" height="200"></canvas>
-                <div class="matrix-info">
-                    <div><strong>Dimensions:</strong> 10000 × 3</div>
-                    <div><strong>Meaning:</strong> Where each pattern appears spatially</div>
-                    <div><strong>Columns:</strong> Orthogonal spatial modes</div>
+                <div class="matrix-title">U</div>
+                <div class="matrix-subtitle">Spatial Patterns [10,000 × 3]</div>
+                <div class="matrix-canvas-container">
+                    <div style="display: flex; gap: 10px; justify-content: center;">
+                        <div style="text-align: center;">
+                            <canvas id="uMatrix0" width="120" height="120"></canvas>
+                            <div id="uLabel0" class="u-column-label">
+                                U<sub>:,1</sub></div>
+                            <div id="uShapeInfo0" class="u-column-info">
+                                → [100 × 100]</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <canvas id="uMatrix1" width="120" height="120"></canvas>
+                            <div id="uLabel1" class="u-column-label">
+                                U<sub>:,2</sub></div>
+                            <div id="uShapeInfo1" class="u-column-info">
+                                → [100 × 100]</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <canvas id="uMatrix2" width="120" height="120"></canvas>
+                            <div id="uLabel2" class="u-column-label">
+                                U<sub>:,3</sub></div>
+                            <div id="uShapeInfo2" class="u-column-info">
+                                → [100 × 100]</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div class="matrix-section">
-                <div class="matrix-title">Σ Matrix</div>
-                <div class="matrix-subtitle">Singular Values (Importance Weights)</div>
-                <canvas id="sigmaMatrix" width="200" height="200"></canvas>
-                <div class="matrix-info">
-                    <div><strong>Dimensions:</strong> 3 × 3 (diagonal)</div>
-                    <div><strong>Meaning:</strong> Importance of each component</div>
-                    <div><strong>Order:</strong> Largest to smallest</div>
+                <div class="matrix-title">Σ</div>
+                <div class="matrix-subtitle">Importance Weights [3 x 3]</div>
+                <div class="matrix-canvas-container">
+                    <canvas id="sigmaMatrix" width="200" height="200"></canvas>
                 </div>
             </div>
 
             <div class="matrix-section">
-                <div class="matrix-title">V<sup>T</sup> Matrix</div>
-                <div class="matrix-subtitle">Color Patterns (Right Singular Vectors)</div>
-                <canvas id="vMatrix" width="200" height="200"></canvas>
-                <div class="matrix-info">
-                    <div><strong>Dimensions:</strong> 3 × 3</div>
-                    <div><strong>Meaning:</strong> Transpose of right singular vectors</div>
-                    <div><strong>Rows:</strong> How each component mixes RGB channels</div>
-                    <div><strong>Note:</strong> Each row is vᵢᵀ (transposed)</div>
+                <div class="matrix-title">V<sup>T</sup></div>
+                <div class="matrix-subtitle">Principal Color Axes [3 x 3]</div>
+                <div class="matrix-canvas-container">
+                    <canvas id="vMatrix" width="200" height="200"></canvas>
                 </div>
             </div>
         </div>
 
-        <div class="rank1-title">Rank-1 Components: A = u₁σ₁v₁ᵀ + u₂σ₂v₂ᵀ + u₃σ₃v₃ᵀ</div>
-
-        <div class="rank1-container">
-            <div class="matrix-section">
-                <div class="matrix-title">Component 1</div>
-                <div class="matrix-subtitle">u₁σ₁v₁ᵀ</div>
-                <canvas id="rank1Component1" width="200" height="200"></canvas>
-                <div class="matrix-info">
-                    <div><strong>Singular Value:</strong> σ₁ = <span id="sigma1Value">0</span></div>
-                    <div><strong>Contribution:</strong> Most important component</div>
-                </div>
-            </div>
-
-            <div class="matrix-section">
-                <div class="matrix-title">Component 2</div>
-                <div class="matrix-subtitle">u₂σ₂v₂ᵀ</div>
-                <canvas id="rank1Component2" width="200" height="200"></canvas>
-                <div class="matrix-info">
-                    <div><strong>Singular Value:</strong> σ₂ = <span id="sigma2Value">0</span></div>
-                    <div><strong>Contribution:</strong> Second most important</div>
-                </div>
-            </div>
-
-            <div class="matrix-section">
-                <div class="matrix-title">Component 3</div>
-                <div class="matrix-subtitle">u₃σ₃v₃ᵀ</div>
-                <canvas id="rank1Component3" width="200" height="200"></canvas>
-                <div class="matrix-info">
-                    <div><strong>Singular Value:</strong> σ₃ = <span id="sigma3Value">0</span></div>
-                    <div><strong>Contribution:</strong> Least important component</div>
-                </div>
-            </div>
+        <div class="equation">
+            A<sub>f</sub> = U × Σ × V<sup>T</sup> &nbsp;&nbsp;
         </div>
-
-        <div class="reconstruction-title">Progressive Reconstruction</div>
-
-        <div class="reconstruction-container">
-            <div class="matrix-section">
-                <div class="matrix-title">Rank-2 Approximation</div>
-                <div class="matrix-subtitle">Component 1 + Component 2</div>
-                <canvas id="rank2Reconstruction" width="200" height="200"></canvas>
-                <div class="matrix-info">
-                    <div><strong>Formula:</strong> u₁σ₁v₁ᵀ + u₂σ₂v₂ᵀ</div>
-                    <div><strong>Quality:</strong> Partial reconstruction</div>
-                    <div><strong>Missing:</strong> Component 3</div>
-                </div>
-            </div>
-
-            <div class="matrix-section">
-                <div class="matrix-title">Full Reconstruction</div>
-                <div class="matrix-subtitle">Component 1 + Component 2 + Component 3</div>
-                <canvas id="fullReconstruction" width="200" height="200"></canvas>
-                <div class="matrix-info">
-                    <div><strong>Formula:</strong> u₁σ₁v₁ᵀ + u₂σ₂v₂ᵀ + u₃σ₃v₃ᵀ</div>
-                    <div><strong>Quality:</strong> Perfect reconstruction</div>
-                    <div><strong>Status:</strong> Equals original image</div>
-                </div>
-            </div>
+        <div class="flattening-note">
+            A [100×100×3] → A<sub>f</sub> [10000×3]
         </div>
 
         <div class="controls">
@@ -358,6 +436,11 @@
                     <label for="shapeSlider">Shapes: <span class="slider-value" id="shapeValue">3</span></label>
                     <input type="range" id="shapeSlider" class="slider" min="1" max="10" value="3"
                         oninput="updateSliders()">
+                </div>
+                <div class="slider-group" id="rankSliderGroup">
+                    <label for="rankSlider">Rank: <span class="slider-value" id="rankValue">3</span></label>
+                    <input type="range" id="rankSlider" class="slider" min="0" max="3" value="3"
+                        oninput="updateRankSlider()">
                 </div>
             </div>
         </div>
@@ -374,6 +457,8 @@
         let currentSVD = null;
         let currentColorComplexity = 3;
         let currentShapeComplexity = 3;
+        let currentRank = 3; // Current rank for approximation
+        let isRankSliderActive = false; // Track if rank slider is being actively used
         let fixedShapes = null; // Store consistent shape positions and types
 
         // Initialize the visualization
@@ -382,7 +467,74 @@
             fixedShapes = generateShapes(currentShapeComplexity, []); // Empty colors initially
             generateComplexImage(currentColorComplexity, currentShapeComplexity);
             performSVD();
+
+            // Set initial rank to match the actual rank and update slider limits
+            updateRankSliderLimits();
+            currentRank = Math.min(currentColorComplexity, 3);
+            document.getElementById('rankSlider').value = currentRank;
+            document.getElementById('rankValue').textContent = currentRank;
+
+            // Set up rank slider interaction listeners
+            setupRankSliderInteraction();
+
             drawAll();
+        }
+
+        // Update rank slider limits based on current color complexity
+        function updateRankSliderLimits() {
+            const actualRank = Math.min(currentColorComplexity, 3);
+            const rankSlider = document.getElementById('rankSlider');
+
+            // Update max value to match actual rank
+            rankSlider.max = actualRank;
+
+            // If current rank is higher than the new max, adjust it
+            if (currentRank > actualRank) {
+                currentRank = actualRank;
+                rankSlider.value = currentRank;
+                document.getElementById('rankValue').textContent = currentRank;
+            }
+        }
+
+        // Set up rank slider interaction detection
+        function setupRankSliderInteraction() {
+            const rankSlider = document.getElementById('rankSlider');
+
+            // Mouse events
+            rankSlider.addEventListener('mousedown', () => {
+                isRankSliderActive = true;
+                // Immediately show highlighting when user starts dragging
+                drawUMatrix();
+                drawSigmaMatrix();
+                drawVMatrix();
+                updateULabels();
+            });
+
+            rankSlider.addEventListener('mouseup', () => {
+                isRankSliderActive = false;
+                // Hide highlighting when user stops dragging
+                drawUMatrix();
+                drawSigmaMatrix();
+                drawVMatrix();
+                updateULabels();
+            });
+
+            // Touch events for mobile
+            rankSlider.addEventListener('touchstart', () => {
+                isRankSliderActive = true;
+                drawUMatrix();
+                drawSigmaMatrix();
+                drawVMatrix();
+                updateULabels();
+            });
+
+            rankSlider.addEventListener('touchend', () => {
+                isRankSliderActive = false;
+                drawUMatrix();
+                drawSigmaMatrix();
+                drawVMatrix();
+                updateULabels();
+            });
         }
 
         // Update slider values and regenerate image
@@ -442,7 +594,63 @@
 
             generateComplexImage(currentColorComplexity, currentShapeComplexity);
             performSVD();
+
+            // Update rank slider limits and preserve current rank if still valid
+            updateRankSliderLimits();
+
             drawAll();
+        }
+
+        // Update rank slider and display approximation
+        function updateRankSlider() {
+            const newRank = parseInt(document.getElementById('rankSlider').value);
+            currentRank = newRank;
+
+            // Update display value
+            document.getElementById('rankValue').textContent = currentRank;
+
+            // Update the title based on rank
+            updateImageTitle();
+
+            // Redraw with current highlighting state (depends on isRankSliderActive)
+            drawOriginalImageWithRank();
+            drawUMatrix();
+            drawSigmaMatrix();
+            drawVMatrix();
+            updateULabels();
+        }        // Briefly highlight all components at full rank, then fade to default
+        function brieflyHighlightFullRank() {
+            // Temporarily set a flag to force highlighting
+            window.showFullRankHighlight = true;
+
+            // Redraw with highlighting
+            drawOriginalImageWithRank();
+            drawUMatrix();
+            drawSigmaMatrix();
+            drawVMatrix();
+            updateULabels();
+
+            // After 1200ms, fade to default appearance
+            setTimeout(() => {
+                window.showFullRankHighlight = false;
+                drawOriginalImageWithRank();
+                drawUMatrix();
+                drawSigmaMatrix();
+                drawVMatrix();
+                updateULabels();
+            }, 400);
+        }        // Update image subtitle based on current rank
+        function updateImageTitle() {
+            const subtitleElement = document.querySelector('.matrix-subtitle');
+            const actualRank = Math.min(currentColorComplexity, 3); // Actual rank of the image
+
+            if (currentRank === actualRank) {
+                subtitleElement.innerHTML = 'Original [100×100×3]';
+            } else if (currentRank === 0) {
+                subtitleElement.innerHTML = 'Zero [100×100×3]';
+            } else {
+                subtitleElement.innerHTML = `Rank-${currentRank} Approximation [100×100×3]`;
+            }
         }
 
         // Add notification function
@@ -818,13 +1026,14 @@
         }
 
         function drawAll() {
-            drawOriginalImage();
+            drawOriginalImageWithRank();
             drawUMatrix();
             drawSigmaMatrix();
             drawVMatrix();
             drawRank1Components();
             drawReconstructions();
             updateSigmaValues();
+            updateImageTitle();
         }
 
         function drawOriginalImage() {
@@ -851,20 +1060,93 @@
             ctx.putImageData(imageData, 0, 0);
         }
 
-        function drawUMatrix() {
-            const canvas = document.getElementById('uMatrix');
+        function drawOriginalImageWithRank() {
+            const canvas = document.getElementById('originalImage');
             const ctx = canvas.getContext('2d');
+            const imageData = ctx.createImageData(canvasSize, canvasSize);
 
-            // Clear canvas
-            ctx.fillStyle = 'white';
-            ctx.fillRect(0, 0, canvasSize, canvasSize);
+            if (currentRank === 0) {
+                // Black image for rank 0
+                for (let i = 0; i < imageData.data.length; i += 4) {
+                    imageData.data[i] = 0;     // Red
+                    imageData.data[i + 1] = 0; // Green
+                    imageData.data[i + 2] = 0; // Blue
+                    imageData.data[i + 3] = 255; // Alpha
+                }
+            } else {
+                // Compute rank-k approximation
+                for (let i = 0; i < canvasSize; i++) {
+                    for (let j = 0; j < canvasSize; j++) {
+                        // Map canvas coordinates to image coordinates
+                        const imgI = Math.floor(i * imageSize / canvasSize);
+                        const imgJ = Math.floor(j * imageSize / canvasSize);
+                        const flatIndex = imgI * imageSize + imgJ;
 
-            // Draw U matrix as a heatmap showing the first few columns
-            const cols = 3; // Show first 3 columns
-            const colWidth = canvasSize / cols;
+                        // Compute rank-k approximation: sum of first k rank-1 components
+                        let r = 0, g = 0, b = 0;
+                        for (let k = 0; k < currentRank; k++) {
+                            const sigma = currentSVD.sigma[k];
+                            const u_val = currentSVD.U[flatIndex][k];
+                            const v_r = currentSVD.VT[k][0];
+                            const v_g = currentSVD.VT[k][1];
+                            const v_b = currentSVD.VT[k][2];
 
-            for (let col = 0; col < cols; col++) {
-                // Find min/max for normalization
+                            r += u_val * sigma * v_r;
+                            g += u_val * sigma * v_g;
+                            b += u_val * sigma * v_b;
+                        }
+
+                        // Scale and clamp to [0, 255]
+                        r = Math.max(0, Math.min(255, r * 255));
+                        g = Math.max(0, Math.min(255, g * 255));
+                        b = Math.max(0, Math.min(255, b * 255));
+
+                        const pixelIndex = (i * canvasSize + j) * 4;
+                        imageData.data[pixelIndex] = r;     // Red
+                        imageData.data[pixelIndex + 1] = g; // Green
+                        imageData.data[pixelIndex + 2] = b; // Blue
+                        imageData.data[pixelIndex + 3] = 255; // Alpha
+                    }
+                }
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        let hoveredVTRow = -1; // Track which V^T row is being hovered
+
+        function updateULabels() {
+            for (let i = 0; i < 3; i++) {
+                const label = document.getElementById(`uLabel${i}`);
+                const shapeInfo = document.getElementById(`uShapeInfo${i}`);
+                const isActive = (hoveredVTRow === i) ||
+                    (isRankSliderActive && i < currentRank) ||
+                    (window.showFullRankHighlight && i < 3); if (isActive) {
+                        label.innerHTML = `σ<sub>${i + 1}</sub>u<sub>${i + 1}</sub>v<sub>${i + 1}</sub><sup>T</sup>`;
+                        label.style.color = '#007bff';
+                        shapeInfo.innerHTML = `→ [100 × 100]`;
+                        shapeInfo.style.color = '#007bff';
+                    } else {
+                    label.innerHTML = `U<sub>:,${i + 1}</sub>`;
+                    label.style.color = '#333';
+                    shapeInfo.innerHTML = `→ [100 × 100]`;
+                    shapeInfo.style.color = '#666';
+                }
+            }
+        }
+
+        function drawUMatrix() {
+            // Draw each U column as a separate square canvas
+            for (let col = 0; col < 3; col++) {
+                const canvas = document.getElementById(`uMatrix${col}`);
+                const ctx = canvas.getContext('2d');
+                const canvasSize = 120; // Size of each individual canvas
+
+                // Clear canvas
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvasSize, canvasSize);
+
+                // Find min/max for normalization for this column
                 let minVal = Infinity, maxVal = -Infinity;
                 for (let i = 0; i < currentSVD.U.length; i++) {
                     const val = currentSVD.U[i][col];
@@ -872,38 +1154,76 @@
                     maxVal = Math.max(maxVal, val);
                 }
 
-                // Draw column as heatmap
+                // Determine if this column should be colored based on V^T hover or rank approximation
+                const shouldColor = (hoveredVTRow === col) ||
+                    (isRankSliderActive && col < currentRank) ||
+                    (window.showFullRankHighlight && col < 3);                // Draw column as square heatmap (unsquished)
                 for (let i = 0; i < imageSize; i++) {
                     for (let j = 0; j < imageSize; j++) {
                         const idx = i * imageSize + j;
                         const val = currentSVD.U[idx][col];
-                        const normalized = (val - minVal) / (maxVal - minVal);
 
-                        const intensity = Math.floor(normalized * 255);
-                        ctx.fillStyle = `rgb(${intensity}, ${intensity}, ${intensity})`;
+                        if (shouldColor) {
+                            // Use the exact same calculation as rank-1 components
+                            const sigma = currentSVD.sigma[col];
+                            const vRow = currentSVD.VT[col];
+                            const uValue = currentSVD.U[idx][col];
 
-                        const x = col * colWidth + (j / imageSize) * colWidth;
+                            // Calculate u_i * sigma_i * v_i^T for this pixel (same as rank-1 components)
+                            const r = Math.max(0, Math.min(255, uValue * sigma * vRow[0] * 255));
+                            const g = Math.max(0, Math.min(255, uValue * sigma * vRow[1] * 255));
+                            const b = Math.max(0, Math.min(255, uValue * sigma * vRow[2] * 255));
+
+                            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                        } else {
+                            // Default grayscale
+                            const normalized = (val - minVal) / (maxVal - minVal);
+                            const intensity = Math.floor(normalized * 255);
+                            ctx.fillStyle = `rgb(${intensity}, ${intensity}, ${intensity})`;
+                        }
+
+                        // Map to square canvas coordinates
+                        const x = (j / imageSize) * canvasSize;
                         const y = (i / imageSize) * canvasSize;
-                        const w = colWidth / imageSize;
+                        const w = canvasSize / imageSize;
                         const h = canvasSize / imageSize;
 
                         ctx.fillRect(x, y, w + 1, h + 1);
                     }
                 }
+            }
 
-                // Draw column separator
-                ctx.strokeStyle = '#333';
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.moveTo((col + 1) * colWidth, 0);
-                ctx.lineTo((col + 1) * colWidth, canvasSize);
-                ctx.stroke();
+            // Set up hover interactions for each U matrix canvas
+            setupUMatrixInteraction();
+        }
 
-                // Add column label
-                ctx.fillStyle = 'black';
-                ctx.font = '12px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(`U[:,${col}]`, col * colWidth + colWidth / 2, canvasSize - 5);
+        function setupUMatrixInteraction() {
+            for (let col = 0; col < 3; col++) {
+                const canvas = document.getElementById(`uMatrix${col}`);
+
+                // Remove existing listeners to prevent duplicates
+                canvas.onmouseover = null;
+                canvas.onmouseleave = null;
+
+                canvas.onmouseover = function () {
+                    if (hoveredVTRow !== col) {
+                        hoveredVTRow = col;
+                        drawUMatrix(); // Redraw U matrix with coloring
+                        drawSigmaMatrix(); // Redraw sigma matrix with coloring
+                        drawVMatrix(); // Redraw V matrix with highlighting
+                        updateULabels(); // Update labels to show principal component
+                    }
+                };
+
+                canvas.onmouseleave = function () {
+                    if (hoveredVTRow === col) {
+                        hoveredVTRow = -1;
+                        drawUMatrix(); // Redraw U matrix without coloring
+                        drawSigmaMatrix(); // Redraw sigma matrix without coloring
+                        drawVMatrix(); // Redraw V matrix without highlighting
+                        updateULabels(); // Reset labels to original text
+                    }
+                };
             }
         }
 
@@ -920,14 +1240,16 @@
             const barWidth = canvasSize / currentSVD.sigma.length;
             const margin = 20;
 
-            ctx.fillStyle = '#007bff';
-
             for (let i = 0; i < currentSVD.sigma.length; i++) {
                 const height = ((currentSVD.sigma[i] / maxSigma) * (canvasSize - 2 * margin));
                 const x = i * barWidth + barWidth * 0.1;
                 const y = canvasSize - margin - height;
                 const w = barWidth * 0.8;
 
+                // Color bar blue if this component is hovered or part of current rank approximation, gray otherwise
+                ctx.fillStyle = (hoveredVTRow === i) ||
+                    (isRankSliderActive && i < currentRank) ||
+                    (window.showFullRankHighlight && i < 3) ? '#007bff' : '#999';
                 ctx.fillRect(x, y, w, height);
 
                 // Add value label
@@ -936,8 +1258,42 @@
                 ctx.textAlign = 'center';
                 ctx.fillText(currentSVD.sigma[i].toFixed(1), i * barWidth + barWidth / 2, canvasSize - 5);
                 ctx.fillText(`σ${i + 1}`, i * barWidth + barWidth / 2, y - 5);
-                ctx.fillStyle = '#007bff';
             }
+
+            // Set up hover interactions for sigma matrix
+            setupSigmaMatrixInteraction(canvas, barWidth);
+        }
+
+        function setupSigmaMatrixInteraction(canvas, barWidth) {
+            // Remove existing listeners to prevent duplicates
+            canvas.onmousemove = null;
+            canvas.onmouseleave = null;
+
+            canvas.onmousemove = function (event) {
+                const rect = canvas.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+
+                // Determine which bar is being hovered
+                const col = Math.floor(x / barWidth);
+
+                if (col >= 0 && col < 3 && col !== hoveredVTRow) {
+                    hoveredVTRow = col;
+                    drawUMatrix(); // Redraw U matrix with coloring
+                    drawSigmaMatrix(); // Redraw sigma matrix with coloring
+                    drawVMatrix(); // Redraw V matrix with highlighting
+                    updateULabels(); // Update labels to show principal component
+                }
+            };
+
+            canvas.onmouseleave = function () {
+                if (hoveredVTRow !== -1) {
+                    hoveredVTRow = -1;
+                    drawUMatrix(); // Redraw U matrix without coloring
+                    drawSigmaMatrix(); // Redraw sigma matrix without coloring
+                    drawVMatrix(); // Redraw V matrix without highlighting
+                    updateULabels(); // Reset labels to original text
+                }
+            };
         }
 
         function drawVMatrix() {
@@ -998,16 +1354,16 @@
                 for (let j = 0; j < 3; j++) {
                     const val = currentSVD.VT[i][j];
 
-                    // Use the row's color as background
+                    // Use the row's light color as background (no color changes)
                     ctx.fillStyle = rowColors[i].light;
                     ctx.fillRect(j * cellSize, i * cellSize, cellSize, cellSize);
 
-                    // Draw border
+                    // Draw normal border for all cells
                     ctx.strokeStyle = '#333';
                     ctx.lineWidth = 1;
                     ctx.strokeRect(j * cellSize, i * cellSize, cellSize, cellSize);
 
-                    // Add value text
+                    // Add value text (always black since we use light colors)
                     ctx.fillStyle = 'black';
                     ctx.font = '14px Arial';
                     ctx.textAlign = 'center';
@@ -1017,6 +1373,33 @@
                         i * cellSize + cellSize / 2 + 5
                     );
                 }
+            }
+
+            // Draw shadow box around hovered row or active rank components
+            for (let i = 0; i < 3; i++) {
+                const shouldHighlight = (hoveredVTRow === i) ||
+                    (isRankSliderActive && i < currentRank) ||
+                    (window.showFullRankHighlight && i < 3); if (shouldHighlight) {
+                        const rowY = i * cellSize;
+                        const margin = 6; // Margin to keep shadow within canvas bounds
+
+                        // Create shadow effect
+                        ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+                        ctx.shadowBlur = 6;
+                        ctx.shadowOffsetX = 2;
+                        ctx.shadowOffsetY = 2;
+
+                        // Draw shadow box around the entire row, inset by margin
+                        ctx.strokeStyle = 'rgba(0, 123, 255, 0.8)';
+                        ctx.lineWidth = 3;
+                        ctx.strokeRect(margin, rowY + margin, canvasSize - 2 * margin, cellSize - 2 * margin);
+
+                        // Reset shadow
+                        ctx.shadowColor = 'transparent';
+                        ctx.shadowBlur = 0;
+                        ctx.shadowOffsetX = 0;
+                        ctx.shadowOffsetY = 0;
+                    }
             }
 
             // Draw row labels with full color backgrounds
@@ -1043,6 +1426,42 @@
                 ctx.textAlign = 'center';
                 ctx.fillText(rowNames[i], labelX + labelWidth / 2, labelY + 10);
             }
+
+            // Add mouse event listeners for hover interaction
+            setupVMatrixInteraction(canvas, cellSize);
+        }
+
+        function setupVMatrixInteraction(canvas, cellSize) {
+            // Remove existing listeners to prevent duplicates
+            canvas.onmousemove = null;
+            canvas.onmouseleave = null;
+
+            canvas.onmousemove = function (event) {
+                const rect = canvas.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+                const y = event.clientY - rect.top;
+
+                // Determine which row is being hovered
+                const row = Math.floor(y / cellSize);
+
+                if (row >= 0 && row < 3 && row !== hoveredVTRow) {
+                    hoveredVTRow = row;
+                    drawUMatrix(); // Redraw U matrix with coloring
+                    drawSigmaMatrix(); // Redraw sigma matrix with coloring
+                    drawVMatrix(); // Redraw V matrix with highlighting
+                    updateULabels(); // Update labels to show principal component
+                }
+            };
+
+            canvas.onmouseleave = function () {
+                if (hoveredVTRow !== -1) {
+                    hoveredVTRow = -1;
+                    drawUMatrix(); // Redraw U matrix without coloring
+                    drawSigmaMatrix(); // Redraw sigma matrix without coloring
+                    drawVMatrix(); // Redraw V matrix without highlighting
+                    updateULabels(); // Reset labels to original text
+                }
+            };
         }
 
         function drawRank1Components() {
