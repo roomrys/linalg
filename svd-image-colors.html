@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SVD in Color Space</title>
+    <link rel="icon" type="image/x-icon" href="assets/svd-color-space.svg">
     <script src="https://cdn.jsdelivr.net/npm/ml-matrix@6.12.1/matrix.umd.min.js"></script>
     <style>
         body {
@@ -540,7 +541,7 @@
 
             <div class="matrix-section">
                 <div class="matrix-title">U</div>
-                <div class="matrix-subtitle">Spatial Features [10,000 × 3]</div>
+                <div class="matrix-subtitle">Spatial Activations [10,000 × 3]</div>
                 <div class="matrix-canvas-container">
                     <div style="display: flex; gap: 10px; justify-content: center;">
                         <div style="text-align: center;">
@@ -881,14 +882,10 @@
             // Take only the number of shapes we want based on current complexity
             const activeShapes = shapes.slice(0, Math.min(shapeComplexity, shapes.length));
 
-            // Debug: Log color assignment
-            console.log(`Assigning colors: ${colors.length} colors available for ${activeShapes.length} shapes`);
-
             // Always reassign colors cyclically to ensure color changes are reflected
             // This ensures that when color complexity changes, all shapes get new color assignments
             const shapesWithColors = activeShapes.map((shape, index) => {
                 const assignedColor = colors.length > 0 ? colors[index % colors.length] : [255, 255, 255];
-                console.log(`Shape ${index}: type=${shape.type}, color=[${assignedColor.join(',')}]`);
                 return {
                     ...shape,
                     color: assignedColor
@@ -1136,10 +1133,7 @@
             // Perform actual SVD from scratch
             currentSVD = computeSVDFromScratch(imageMatrix);
 
-            console.log('SVD Results:');
-            console.log('Singular values:', currentSVD.sigma);
-            console.log('U dimensions:', currentSVD.U.length, 'x', currentSVD.U[0].length);
-            console.log('VT dimensions:', currentSVD.VT.length, 'x', currentSVD.VT[0].length);
+            console.log(`SVD Results:\n\tSingular values: ${currentSVD.sigma}\n\tU dimensions: ${currentSVD.U.length} x ${currentSVD.U[0].length}\n\tVT dimensions: ${currentSVD.VT.length} x ${currentSVD.VT[0].length}`);
         }
 
 
@@ -1197,9 +1191,6 @@
             drawUMatrix();
             drawSigmaMatrix();
             drawVMatrix();
-            drawRank1Components();
-            drawReconstructions();
-            updateSigmaValues();
             updateImageTitle();
         }
 
@@ -1670,9 +1661,6 @@
             const componentImage = new Array(imageSize);
             const sigma = currentSVD.sigma[componentIndex];
             const vRow = currentSVD.VT[componentIndex];
-
-            // Debug: Log the V^T row being used
-            console.log(`Component ${componentIndex}: sigma=${sigma.toFixed(3)}, vRow=[${vRow.map(v => v.toFixed(3)).join(', ')}]`);
 
             for (let i = 0; i < imageSize; i++) {
                 componentImage[i] = new Array(imageSize);
