@@ -98,6 +98,7 @@
     <script type="module">
         import { CONFIG } from './scripts/svd-color-space/constants.js';
         import { AppState } from './scripts/svd-color-space/app-state.js';
+        import { ImageGenerator } from './scripts/svd-color-space/image-generator.js';
 
         // Image dimensions
         const imageSize = CONFIG.IMAGE_SIZE;
@@ -105,12 +106,13 @@
 
         // Initialize application state
         const appState = new AppState();
+        const imageGenerator = new ImageGenerator();
 
         // Initialize the visualization
         function init() {
             // Generate initial fixed shapes
-            appState.fixedShapes = generateShapes(appState.shapeComplexity, []); // Empty colors initially
-            generateComplexImage(appState.colorComplexity, appState.shapeComplexity);
+            appState.fixedShapes = imageGenerator.generateShapes();
+            appState.imageData = imageGenerator.generateComplexImage(appState.colorComplexity, appState.shapeComplexity, appState.fixedShapes);
             performSVD();
 
             // Set initial rank to match the actual rank and update slider limits
@@ -242,7 +244,7 @@
             appState.colorComplexity = adjustedColorComplexity;
             appState.shapeComplexity = adjustedShapeComplexity;
 
-            generateComplexImage(appState.colorComplexity, appState.shapeComplexity);
+            appState.imageData = imageGenerator.generateComplexImage(appState.colorComplexity, appState.shapeComplexity, appState.fixedShapes);
             performSVD();
 
             // Update rank slider limits and preserve current rank if still valid
@@ -320,70 +322,6 @@
             }, 2500);
         }
 
-        function generateComplexImage(colorComplexity, shapeComplexity) {
-            // Initialize image with background
-            appState.imageData = new Array(imageSize);
-            for (let i = 0; i < imageSize; i++) {
-                appState.imageData[i] = new Array(imageSize);
-                for (let j = 0; j < imageSize; j++) {
-                    appState.imageData[i][j] = [0, 0, 0]; // Black background
-                }
-            }
-
-            // Generate color palette based on complexity
-            const colors = getColorPalette(colorComplexity);
-
-            // Use fixed shapes but apply current colors
-            const shapesToDraw = assignColorsToFixedShapes(appState.fixedShapes, colors, shapeComplexity);
-
-            // Draw shapes to the image
-            drawShapes(shapesToDraw);
-        }
-
-        function assignColorsToFixedShapes(shapes, colors, shapeComplexity) {
-            // Take only the number of shapes we want based on current complexity
-            const activeShapes = shapes.slice(0, Math.min(shapeComplexity, shapes.length));
-
-            // Always reassign colors cyclically to ensure color changes are reflected
-            // This ensures that when color complexity changes, all shapes get new color assignments
-            const shapesWithColors = activeShapes.map((shape, index) => {
-                const assignedColor = colors.length > 0 ? colors[index % colors.length] : [255, 255, 255];
-                return {
-                    ...shape,
-                    color: assignedColor
-                };
-            });
-
-            return shapesWithColors;
-        }
-
-        function getColorPalette(complexity) {
-            const baseColors = CONFIG.COLORS;
-
-            return baseColors.slice(0, Math.min(complexity, baseColors.length));
-        }
-
-        function generateShapes(complexity, colors) {
-            const shapes = [];
-            const shapeTypes = CONFIG.SHAPE_TYPES;
-
-            // Generate up to 10 shapes with fixed positions but no colors yet
-            for (let i = 0; i < CONFIG.MAX_SHAPES; i++) { // Always generate 10 potential shapes
-                const shapeType = shapeTypes[i % shapeTypes.length];
-
-                shapes.push({
-                    type: shapeType,
-                    color: null, // Color will be assigned later
-                    x: Math.floor(Math.random() * (imageSize - 40)) + 20,
-                    y: Math.floor(Math.random() * (imageSize - 40)) + 20,
-                    size: Math.floor(Math.random() * 20) + 15,
-                    rotation: Math.random() * 2 * Math.PI
-                });
-            }
-
-            return shapes;
-        }
-
         function addShapesToPattern(numNewShapes) {
             const shapeTypes = CONFIG.SHAPE_TYPES;
 
@@ -400,168 +338,6 @@
                     size: Math.floor(Math.random() * 20) + 15,
                     rotation: Math.random() * 2 * Math.PI
                 });
-            }
-        }
-
-        function drawShapes(shapes) {
-            shapes.forEach(shape => {
-                switch (shape.type) {
-                    case 'circle':
-                        drawCircle(shape.x, shape.y, shape.size, shape.color);
-                        break;
-                    case 'rectangle':
-                        drawRectangle(shape.x, shape.y, shape.size, shape.size, shape.color);
-                        break;
-                    case 'triangle':
-                        drawTriangle(shape.x, shape.y, shape.size, shape.color);
-                        break;
-                    case 'diamond':
-                        drawDiamond(shape.x, shape.y, shape.size, shape.color);
-                        break;
-                    case 'pentagon':
-                        drawPolygon(shape.x, shape.y, shape.size, 5, shape.color, shape.rotation);
-                        break;
-                    case 'hexagon':
-                        drawPolygon(shape.x, shape.y, shape.size, 6, shape.color, shape.rotation);
-                        break;
-                    case 'star':
-                        drawStar(shape.x, shape.y, shape.size, shape.color);
-                        break;
-                    case 'ellipse':
-                        drawEllipse(shape.x, shape.y, shape.size, shape.size * 0.7, shape.color);
-                        break;
-                    case 'cross':
-                        drawCross(shape.x, shape.y, shape.size, shape.color);
-                        break;
-                    case 'heart':
-                        drawHeart(shape.x, shape.y, shape.size, shape.color);
-                        break;
-                }
-            });
-        }
-
-        function drawCircle(cx, cy, radius, color) {
-            for (let i = 0; i < imageSize; i++) {
-                for (let j = 0; j < imageSize; j++) {
-                    const dist = Math.sqrt((i - cy) ** 2 + (j - cx) ** 2);
-                    if (dist <= radius) {
-                        appState.imageData[i][j] = color;
-                    }
-                }
-            }
-        }
-
-        function drawRectangle(x, y, width, height, color) {
-            for (let i = Math.max(0, Math.floor(y)); i < Math.min(imageSize, Math.ceil(y + height)); i++) {
-                for (let j = Math.max(0, Math.floor(x)); j < Math.min(imageSize, Math.ceil(x + width)); j++) {
-                    if (i >= 0 && i < imageSize && j >= 0 && j < imageSize) {
-                        appState.imageData[i][j] = color;
-                    }
-                }
-            }
-        }
-
-        function drawTriangle(cx, cy, size, color) {
-            for (let i = 0; i < imageSize; i++) {
-                for (let j = 0; j < imageSize; j++) {
-                    // Simple right triangle
-                    const relativeI = i - cy;
-                    const relativeJ = j - cx;
-                    if (relativeJ >= 0 && relativeI >= 0 && relativeJ < (size - relativeI) && relativeI < size) {
-                        appState.imageData[i][j] = color;
-                    }
-                }
-            }
-        }
-
-        function drawDiamond(cx, cy, size, color) {
-            for (let i = 0; i < imageSize; i++) {
-                for (let j = 0; j < imageSize; j++) {
-                    const dx = Math.abs(j - cx);
-                    const dy = Math.abs(i - cy);
-                    if (dx + dy <= size) {
-                        appState.imageData[i][j] = color;
-                    }
-                }
-            }
-        }
-
-        function drawPolygon(cx, cy, size, sides, color, rotation) {
-            for (let i = 0; i < imageSize; i++) {
-                for (let j = 0; j < imageSize; j++) {
-                    const dx = j - cx;
-                    const dy = i - cy;
-                    const angle = Math.atan2(dy, dx) + rotation;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-
-                    // Approximate polygon as circle for simplicity
-                    const polygonRadius = size * Math.cos(Math.PI / sides) / Math.cos((angle % (2 * Math.PI / sides)) - Math.PI / sides);
-                    if (dist <= Math.abs(polygonRadius) && dist <= size) {
-                        appState.imageData[i][j] = color;
-                    }
-                }
-            }
-        }
-
-        function drawStar(cx, cy, size, color) {
-            for (let i = 0; i < imageSize; i++) {
-                for (let j = 0; j < imageSize; j++) {
-                    const dx = j - cx;
-                    const dy = i - cy;
-                    const angle = Math.atan2(dy, dx);
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-
-                    // Simple 5-pointed star approximation
-                    const starAngle = ((angle + Math.PI) % (2 * Math.PI / 5)) - Math.PI / 5;
-                    const starRadius = size * (0.5 + 0.5 * Math.cos(5 * starAngle));
-                    if (dist <= starRadius) {
-                        appState.imageData[i][j] = color;
-                    }
-                }
-            }
-        }
-
-        function drawEllipse(cx, cy, width, height, color) {
-            for (let i = 0; i < imageSize; i++) {
-                for (let j = 0; j < imageSize; j++) {
-                    const dx = (j - cx) / width;
-                    const dy = (i - cy) / height;
-                    if (dx * dx + dy * dy <= 1) {
-                        appState.imageData[i][j] = color;
-                    }
-                }
-            }
-        }
-
-        function drawCross(cx, cy, size, color) {
-            const thickness = Math.max(3, Math.floor(size / 4));
-            // Horizontal bar
-            const hx = Math.floor(cx - size);
-            const hy = Math.floor(cy - thickness / 2);
-            const hwidth = Math.floor(size * 2);
-            const hheight = Math.floor(thickness);
-            drawRectangle(hx, hy, hwidth, hheight, color);
-
-            // Vertical bar  
-            const vx = Math.floor(cx - thickness / 2);
-            const vy = Math.floor(cy - size);
-            const vwidth = Math.floor(thickness);
-            const vheight = Math.floor(size * 2);
-            drawRectangle(vx, vy, vwidth, vheight, color);
-        }
-
-        function drawHeart(cx, cy, size, color) {
-            for (let i = 0; i < imageSize; i++) {
-                for (let j = 0; j < imageSize; j++) {
-                    const dx = (j - cx) / size;
-                    const dy = (i - cy) / size;
-
-                    // Heart equation approximation
-                    const heartEq = Math.pow(dx * dx + dy * dy - 1, 3) - dx * dx * dy * dy * dy;
-                    if (heartEq <= 0 && dx * dx + dy * dy <= 2) {
-                        appState.imageData[i][j] = color;
-                    }
-                }
             }
         }
 
@@ -582,8 +358,6 @@
 
             console.log(appState.svdResult);
         }
-
-
 
         function computeSVDFromScratch(matrix) {
             let A = new mlMatrix.Matrix(matrix);
