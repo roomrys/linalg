@@ -81,28 +81,29 @@
             <div class="slider-container">
                 <div class="slider-group" id="colorSliderGroup">
                     <label for="colorSlider">Colors: <span class="slider-value" id="colorValue">3</span></label>
-                    <input type="range" id="colorSlider" class="slider" min="1" max="10" value="3"
-                        oninput="updateSliders()">
+                    <input type="range" id="colorSlider" class="slider" min="1" max="10" value="3">
                 </div>
                 <div class="slider-group" id="shapeSliderGroup">
                     <label for="shapeSlider">Shapes: <span class="slider-value" id="shapeValue">3</span></label>
-                    <input type="range" id="shapeSlider" class="slider" min="1" max="10" value="3"
-                        oninput="updateSliders()">
+                    <input type="range" id="shapeSlider" class="slider" min="1" max="10" value="3">
                 </div>
                 <div class="slider-group" id="rankSliderGroup">
                     <label for="rankSlider">Rank: <span class="slider-value" id="rankValue">3</span></label>
-                    <input type="range" id="rankSlider" class="slider" min="0" max="3" value="3"
-                        oninput="updateRankSlider()">
+                    <input type="range" id="rankSlider" class="slider" min="0" max="3" value="3">
                 </div>
             </div>
         </div>
     </div>
 
-    <script>
+    <script type="module">
+        import { CONFIG } from './scripts/svd-color-space/constants.js';
+
+        // // TODO: Make CONFIG available globally for now (we'll clean this up later)
+        // window.CONFIG = CONFIG;
 
         // Image dimensions
-        const imageSize = 100;
-        const canvasSize = 200;
+        const imageSize = CONFIG.IMAGE_SIZE;
+        const canvasSize = CONFIG.CANVAS_SIZE;
 
         // Current image data
         let currentImageData = null;
@@ -128,6 +129,11 @@
 
             // Set up rank slider interaction listeners
             setupRankSliderInteraction();
+
+            // Set up event listeners for sliders
+            document.getElementById('colorSlider').addEventListener('input', updateSliders);
+            document.getElementById('shapeSlider').addEventListener('input', updateSliders);
+            document.getElementById('rankSlider').addEventListener('input', updateRankSlider);
 
             drawAll();
         }
@@ -208,7 +214,7 @@
                 document.getElementById('shapeSliderGroup').classList.add('slider-auto-adjusted');
                 setTimeout(() => {
                     document.getElementById('shapeSliderGroup').classList.remove('slider-auto-adjusted');
-                }, 500);
+                }, CONFIG.ANIMATION_DURATION);
 
                 // Show brief notification
                 showSliderNotification(`Shape complexity automatically increased to ${adjustedShapeComplexity} to support ${newColorComplexity} colors`);
@@ -224,7 +230,7 @@
                 document.getElementById('colorSliderGroup').classList.add('slider-auto-adjusted');
                 setTimeout(() => {
                     document.getElementById('colorSliderGroup').classList.remove('slider-auto-adjusted');
-                }, 500);
+                }, CONFIG.ANIMATION_DURATION);
 
                 // Show brief notification
                 showSliderNotification(`Color complexity automatically decreased to ${adjustedColorComplexity} to match ${newShapeComplexity} shapes`);
@@ -360,28 +366,17 @@
         }
 
         function getColorPalette(complexity) {
-            const baseColors = [
-                [255, 0, 0],    // Red
-                [0, 255, 0],    // Green  
-                [0, 0, 255],    // Blue
-                [255, 255, 0],  // Yellow
-                [255, 0, 255],  // Magenta
-                [0, 255, 255],  // Cyan
-                [255, 128, 0],  // Orange
-                [128, 0, 255],  // Purple
-                [255, 192, 203], // Pink
-                [128, 255, 0]   // Lime
-            ];
+            const baseColors = CONFIG.COLORS;
 
             return baseColors.slice(0, Math.min(complexity, baseColors.length));
         }
 
         function generateShapes(complexity, colors) {
             const shapes = [];
-            const shapeTypes = ['circle', 'rectangle', 'triangle', 'diamond', 'pentagon', 'hexagon', 'star', 'ellipse', 'cross', 'heart'];
+            const shapeTypes = CONFIG.SHAPE_TYPES;
 
             // Generate up to 10 shapes with fixed positions but no colors yet
-            for (let i = 0; i < Math.min(10, 10); i++) { // Always generate 10 potential shapes
+            for (let i = 0; i < CONFIG.MAX_SHAPES; i++) { // Always generate 10 potential shapes
                 const shapeType = shapeTypes[i % shapeTypes.length];
 
                 shapes.push({
@@ -398,10 +393,10 @@
         }
 
         function addShapesToPattern(numNewShapes) {
-            const shapeTypes = ['circle', 'rectangle', 'triangle', 'diamond', 'pentagon', 'hexagon', 'star', 'ellipse', 'cross', 'heart'];
+            const shapeTypes = CONFIG.SHAPE_TYPES;
 
             // Add new shapes to the existing pattern
-            for (let i = 0; i < numNewShapes && fixedShapes.length < 10; i++) {
+            for (let i = 0; i < numNewShapes && fixedShapes.length < CONFIG.MAX_SHAPES; i++) {
                 const currentShapeIndex = fixedShapes.length;
                 const shapeType = shapeTypes[currentShapeIndex % shapeTypes.length];
 
@@ -889,26 +884,28 @@
                 redOverlayCanvas.style.display = 'none';
             }
 
+            const uCanvasSize = CONFIG.U_CANVAS_SIZE;
+
             // Draw Red channel in first U column (uMatrix0)
             const redCanvas = document.getElementById('uMatrix0');
             const redCtx = redCanvas.getContext('2d');
-            const redImageData = redCtx.createImageData(120, 120);
+            const redImageData = redCtx.createImageData(uCanvasSize, uCanvasSize);
 
             // Draw Green channel in second U column (uMatrix1)
             const greenCanvas = document.getElementById('uMatrix1');
             const greenCtx = greenCanvas.getContext('2d');
-            const greenImageData = greenCtx.createImageData(120, 120);
+            const greenImageData = greenCtx.createImageData(uCanvasSize, uCanvasSize);
 
             // Draw Blue channel in third U column (uMatrix2)
             const blueCanvas = document.getElementById('uMatrix2');
             const blueCtx = blueCanvas.getContext('2d');
-            const blueImageData = blueCtx.createImageData(120, 120);
+            const blueImageData = blueCtx.createImageData(uCanvasSize, uCanvasSize);
 
-            for (let i = 0; i < 120; i++) {
-                for (let j = 0; j < 120; j++) {
-                    const imgI = Math.floor(i * imageSize / 120);
-                    const imgJ = Math.floor(j * imageSize / 120);
-                    const pixelIndex = (i * 120 + j) * 4;
+            for (let i = 0; i < uCanvasSize; i++) {
+                for (let j = 0; j < uCanvasSize; j++) {
+                    const imgI = Math.floor(i * imageSize / uCanvasSize);
+                    const imgJ = Math.floor(j * imageSize / uCanvasSize);
+                    const pixelIndex = (i * uCanvasSize + j) * 4;
                     const [r, g, b] = currentImageData[imgI][imgJ];
 
                     // Red channel (color-tinted)
@@ -956,7 +953,7 @@
 
             // Clear canvas with white background (same as original)
             sigmaCtx.fillStyle = 'white';
-            sigmaCtx.fillRect(0, 0, 200, 200);
+            sigmaCtx.fillRect(0, 0, canvasSize, canvasSize);
 
             // Calculate variance for each channel across all pixels
             let redSum = 0, greenSum = 0, blueSum = 0;
@@ -997,13 +994,13 @@
             const labels = ['R', 'G', 'B'];
 
             const maxStdDev = Math.max(...stdDevs);
-            const barWidth = 200 / stdDevs.length;
+            const barWidth = canvasSize / stdDevs.length;
             const margin = 20;
 
             for (let i = 0; i < stdDevs.length; i++) {
-                const height = ((stdDevs[i] / maxStdDev) * (200 - 2 * margin));
+                const height = ((stdDevs[i] / maxStdDev) * (canvasSize - 2 * margin));
                 const x = i * barWidth + barWidth * 0.1;
-                const y = 200 - margin - height;
+                const y = canvasSize - margin - height;
                 const w = barWidth * 0.8;
 
                 // Use channel colors instead of blue/gray
@@ -1014,7 +1011,7 @@
                 sigmaCtx.fillStyle = 'black';
                 sigmaCtx.font = '12px Arial';
                 sigmaCtx.textAlign = 'center';
-                sigmaCtx.fillText(stdDevs[i].toFixed(1), i * barWidth + barWidth / 2, 200 - 5);
+                sigmaCtx.fillText(stdDevs[i].toFixed(1), i * barWidth + barWidth / 2, canvasSize - 5);
                 sigmaCtx.fillText(`σ${labels[i]}`, i * barWidth + barWidth / 2, y - 5);
             }
 
@@ -1054,31 +1051,33 @@
 
         function drawRGBChannelsWithHighlight(hoverX, hoverY, hoverR, hoverG, hoverB) {
             // Determine which channels have significant contribution (non-zero or above threshold)
-            const threshold = 10; // Minimum value to consider "contributing"
+            const threshold = CONFIG.HOVER_THRESHOLD; // Minimum value to consider "contributing"
             const redActive = hoverR > threshold;
             const greenActive = hoverG > threshold;
             const blueActive = hoverB > threshold;
 
+            const uCanvasSize = CONFIG.U_CANVAS_SIZE;
+
             // Draw Red channel in first U column (uMatrix0) with conditional highlighting
             const redCanvas = document.getElementById('uMatrix0');
             const redCtx = redCanvas.getContext('2d');
-            const redImageData = redCtx.createImageData(120, 120);
+            const redImageData = redCtx.createImageData(uCanvasSize, uCanvasSize);
 
             // Draw Green channel in second U column (uMatrix1) with conditional highlighting
             const greenCanvas = document.getElementById('uMatrix1');
             const greenCtx = greenCanvas.getContext('2d');
-            const greenImageData = greenCtx.createImageData(120, 120);
+            const greenImageData = greenCtx.createImageData(uCanvasSize, uCanvasSize);
 
             // Draw Blue channel in third U column (uMatrix2) with conditional highlighting
             const blueCanvas = document.getElementById('uMatrix2');
             const blueCtx = blueCanvas.getContext('2d');
-            const blueImageData = blueCtx.createImageData(120, 120);
+            const blueImageData = blueCtx.createImageData(uCanvasSize, uCanvasSize);
 
-            for (let i = 0; i < 120; i++) {
-                for (let j = 0; j < 120; j++) {
-                    const imgI = Math.floor(i * imageSize / 120);
-                    const imgJ = Math.floor(j * imageSize / 120);
-                    const pixelIndex = (i * 120 + j) * 4;
+            for (let i = 0; i < uCanvasSize; i++) {
+                for (let j = 0; j < uCanvasSize; j++) {
+                    const imgI = Math.floor(i * imageSize / uCanvasSize);
+                    const imgJ = Math.floor(j * imageSize / uCanvasSize);
+                    const pixelIndex = (i * uCanvasSize + j) * 4;
                     const [r, g, b] = currentImageData[imgI][imgJ];
 
                     // Red channel with conditional highlighting
@@ -1133,8 +1132,8 @@
             blueCtx.putImageData(blueImageData, 0, 0);
 
             // Add highlight cursors at hover position for active channels
-            const cursorX = hoverX * 120 / imageSize;
-            const cursorY = hoverY * 120 / imageSize;
+            const cursorX = hoverX * uCanvasSize / imageSize;
+            const cursorY = hoverY * uCanvasSize / imageSize;
 
             if (redActive) {
                 redCtx.strokeStyle = '#fff';
@@ -1254,7 +1253,7 @@
 
             // Clear canvas with white background
             sigmaCtx.fillStyle = 'white';
-            sigmaCtx.fillRect(0, 0, 200, 200);
+            sigmaCtx.fillRect(0, 0, canvasSize, canvasSize);
 
             // Recalculate RGB standard deviations (same as in drawRGBChannelsInMainMatrices)
             let redSum = 0, greenSum = 0, blueSum = 0;
@@ -1292,13 +1291,13 @@
             const labels = ['R', 'G', 'B'];
 
             const maxStdDev = Math.max(...stdDevs);
-            const barWidth = 200 / stdDevs.length;
+            const barWidth = canvasSize / stdDevs.length;
             const margin = 20;
 
             for (let i = 0; i < stdDevs.length; i++) {
-                const height = ((stdDevs[i] / maxStdDev) * (200 - 2 * margin));
+                const height = ((stdDevs[i] / maxStdDev) * (canvasSize - 2 * margin));
                 const x = i * barWidth + barWidth * 0.1;
-                const y = 200 - margin - height;
+                const y = canvasSize - margin - height;
                 const w = barWidth * 0.8;
 
                 // Calculate dynamic color based on RGB identity matrix (same approach as SVD sigma bars)
@@ -1327,7 +1326,7 @@
                 sigmaCtx.fillStyle = 'black';
                 sigmaCtx.font = '12px Arial';
                 sigmaCtx.textAlign = 'center';
-                sigmaCtx.fillText(stdDevs[i].toFixed(1), i * barWidth + barWidth / 2, 200 - 5);
+                sigmaCtx.fillText(stdDevs[i].toFixed(1), i * barWidth + barWidth / 2, canvasSize - 5);
                 sigmaCtx.fillText(`σ${labels[i]}`, i * barWidth + barWidth / 2, y - 5);
             }
         }
@@ -1460,7 +1459,7 @@
             for (let col = 0; col < 3; col++) {
                 const canvas = document.getElementById(`uMatrix${col}`);
                 const ctx = canvas.getContext('2d');
-                const canvasSize = 120; // Size of each individual canvas
+                const canvasSize = CONFIG.U_CANVAS_SIZE; // Size of each individual canvas
 
                 // Clear canvas
                 ctx.fillStyle = 'white';
