@@ -1148,6 +1148,9 @@
             const ctx = canvas.getContext('2d');
             const imageData = ctx.createImageData(canvasSize, canvasSize);
 
+            // Check if we're hovering over A and should use top-k RGB components
+            const useTopKRGBComponents = hoveredOriginalImage;
+
             if (currentRank === 0) {
                 // Black image for rank 0
                 for (let i = 0; i < imageData.data.length; i += 4) {
@@ -1157,6 +1160,55 @@
                     imageData.data[i + 3] = 255; // Alpha
                 }
             } else {
+                // Check if we're hovering over A and should use top-k RGB components
+                const useTopKRGBComponents = hoveredOriginalImage;
+                let componentsToUse;
+
+                if (useTopKRGBComponents) {
+                    // In RGB mode, use top k RGB channels based on their standard deviations
+                    const rgbChannels = getRGBChannelsByStdDev();
+                    const topKChannels = rgbChannels.slice(0, currentRank);
+
+                    // Reconstruct using only selected RGB channels (not SVD components)
+                    for (let i = 0; i < canvasSize; i++) {
+                        for (let j = 0; j < canvasSize; j++) {
+                            // Map canvas coordinates to image coordinates
+                            const imgI = Math.floor(i * imageSize / canvasSize);
+                            const imgJ = Math.floor(j * imageSize / canvasSize);
+
+                            // Get original RGB values
+                            const [originalR, originalG, originalB] = currentImageData[imgI][imgJ];
+
+                            // Start with black and add only the selected RGB channels
+                            let r = 0, g = 0, b = 0;
+
+                            // Add contributions from the top k RGB channels only
+                            topKChannels.forEach(channel => {
+                                if (channel.channel === 'R') r = originalR;
+                                if (channel.channel === 'G') g = originalG;
+                                if (channel.channel === 'B') b = originalB;
+                            });
+
+                            const pixelIndex = (i * canvasSize + j) * 4;
+                            imageData.data[pixelIndex] = r;     // Red
+                            imageData.data[pixelIndex + 1] = g; // Green
+                            imageData.data[pixelIndex + 2] = b; // Blue
+                            imageData.data[pixelIndex + 3] = 255; // Alpha
+                        }
+                    }
+
+                    // Skip the SVD reconstruction since we did RGB reconstruction above
+                    ctx.putImageData(imageData, 0, 0);
+                    setupOriginalImageInteraction();
+                    return;
+                } else {
+                    // Use the first k components in order (normal SVD behavior)
+                    componentsToUse = [];
+                    for (let k = 0; k < currentRank; k++) {
+                        componentsToUse.push({ index: k });
+                    }
+                }
+
                 // Compute rank-k approximation
                 for (let i = 0; i < canvasSize; i++) {
                     for (let j = 0; j < canvasSize; j++) {
@@ -1165,9 +1217,10 @@
                         const imgJ = Math.floor(j * imageSize / canvasSize);
                         const flatIndex = imgI * imageSize + imgJ;
 
-                        // Compute rank-k approximation: sum of first k rank-1 components
+                        // Compute rank-k approximation: sum of selected components
                         let r = 0, g = 0, b = 0;
-                        for (let k = 0; k < currentRank; k++) {
+                        componentsToUse.forEach(comp => {
+                            const k = comp.index;
                             const sigma = currentSVD.sigma[k];
                             const u_val = currentSVD.U[flatIndex][k];
                             const v_r = currentSVD.VT[k][0];
@@ -1177,7 +1230,7 @@
                             r += u_val * sigma * v_r;
                             g += u_val * sigma * v_g;
                             b += u_val * sigma * v_b;
-                        }
+                        });
 
                         // Scale and clamp to [0, 255]
                         r = Math.max(0, Math.min(255, r * 255));
@@ -1210,6 +1263,8 @@
                 if (!hoveredOriginalImage) {
                     hoveredOriginalImage = true;
                     drawRGBChannelsInMainMatrices();
+                    // Also update matrix A to show rank-k approximation using top RGB channels
+                    drawOriginalImageWithRank();
                 }
             };
 
@@ -1223,18 +1278,23 @@
                     const imgX = Math.floor(x * imageSize / canvasSize);
                     const imgY = Math.floor(y * imageSize / canvasSize);
 
-                    // Get the RGB values at this position
+                    // Get the RGB values from the displayed rank-k approximation at this position
                     if (imgX >= 0 && imgX < imageSize && imgY >= 0 && imgY < imageSize) {
-                        const [r, g, b] = currentImageData[imgY][imgX];
+                        const [r, g, b] = getRankApproximationRGBAt(imgX, imgY);
                         drawRGBChannelsWithHighlight(imgX, imgY, r, g, b);
+                        // Keep the rank-k approximation in A updated
+                        drawOriginalImageWithRank();
                     }
                 }
             };
 
             canvas.onmouseleave = function () {
                 if (hoveredOriginalImage) {
+                    // First restore the original image display in A (while still hovering)
                     hoveredOriginalImage = false;
+                    drawOriginalImageWithRank();
 
+                    // Then restore all the other UI elements
                     // Restore U matrix display
                     const uMatrixContainer = document.querySelector('.matrix-section:nth-child(2) .matrix-canvas-container');
                     const originalUDisplay = uMatrixContainer.querySelector('div[style*="display: flex"], div[style*="display: none"]');
@@ -1759,6 +1819,80 @@
                 sigmaCtx.fillText(stdDevs[i].toFixed(1), i * barWidth + barWidth / 2, 200 - 5);
                 sigmaCtx.fillText(`σ${labels[i]}`, i * barWidth + barWidth / 2, y - 5);
             }
+        }
+
+        function getRankApproximationRGBAt(imgX, imgY) {
+            // Calculate the RGB values at the specified position based on the current rank-k approximation
+            // This should match what's being displayed in matrix A during hover mode
+
+            if (currentRank === 0) {
+                return [0, 0, 0]; // Black for rank 0
+            }
+
+            // When hovering, we're in RGB channel mode, so use top k RGB channels
+            const rgbChannels = getRGBChannelsByStdDev();
+            const topKChannels = rgbChannels.slice(0, currentRank);
+
+            // Get original RGB values at this position
+            const [originalR, originalG, originalB] = currentImageData[imgY][imgX];
+
+            // Start with black and add only the selected RGB channels
+            let r = 0, g = 0, b = 0;
+
+            // Add contributions from the top k RGB channels only
+            topKChannels.forEach(channel => {
+                if (channel.channel === 'R') r = originalR;
+                if (channel.channel === 'G') g = originalG;
+                if (channel.channel === 'B') b = originalB;
+            });
+
+            return [r, g, b];
+        }
+
+        function getRGBChannelsByStdDev() {
+            // Calculate standard deviations for each RGB channel (same as RGB mode)
+            let redSum = 0, greenSum = 0, blueSum = 0;
+            let redSumSq = 0, greenSumSq = 0, blueSumSq = 0;
+            const totalPixels = imageSize * imageSize;
+
+            for (let i = 0; i < imageSize; i++) {
+                for (let j = 0; j < imageSize; j++) {
+                    const [r, g, b] = currentImageData[i][j];
+
+                    redSum += r;
+                    greenSum += g;
+                    blueSum += b;
+
+                    redSumSq += r * r;
+                    greenSumSq += g * g;
+                    blueSumSq += b * b;
+                }
+            }
+
+            // Calculate variance = E[X²] - (E[X])²
+            const redMean = redSum / totalPixels;
+            const greenMean = greenSum / totalPixels;
+            const blueMean = blueSum / totalPixels;
+
+            const redVariance = (redSumSq / totalPixels) - (redMean * redMean);
+            const greenVariance = (greenSumSq / totalPixels) - (greenMean * greenMean);
+            const blueVariance = (blueSumSq / totalPixels) - (blueMean * blueMean);
+
+            // Take square root to get standard deviation
+            const redStdDev = Math.sqrt(redVariance);
+            const greenStdDev = Math.sqrt(greenVariance);
+            const blueStdDev = Math.sqrt(blueVariance);
+
+            // Create array of RGB channels with their standard deviations
+            const channels = [
+                { channel: 'R', stdDev: redStdDev },
+                { channel: 'G', stdDev: greenStdDev },
+                { channel: 'B', stdDev: blueStdDev }
+            ];
+
+            // Sort by standard deviation (descending) 
+            channels.sort((a, b) => b.stdDev - a.stdDev);
+            return channels;
         }
 
         let hoveredVTRow = -1; // Track which V^T row is being hovered
