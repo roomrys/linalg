@@ -97,35 +97,27 @@
 
     <script type="module">
         import { CONFIG } from './scripts/svd-color-space/constants.js';
-
-        // // TODO: Make CONFIG available globally for now (we'll clean this up later)
-        // window.CONFIG = CONFIG;
+        import { AppState } from './scripts/svd-color-space/app-state.js';
 
         // Image dimensions
         const imageSize = CONFIG.IMAGE_SIZE;
         const canvasSize = CONFIG.CANVAS_SIZE;
 
-        // Current image data
-        let currentImageData = null;
-        let currentSVD = null;
-        let currentColorComplexity = 3;
-        let currentShapeComplexity = 3;
-        let currentRank = 3; // Current rank for approximation
-        let isRankSliderActive = false; // Track if rank slider is being actively used
-        let fixedShapes = null; // Store consistent shape positions and types
+        // Initialize application state
+        const appState = new AppState();
 
         // Initialize the visualization
         function init() {
             // Generate initial fixed shapes
-            fixedShapes = generateShapes(currentShapeComplexity, []); // Empty colors initially
-            generateComplexImage(currentColorComplexity, currentShapeComplexity);
+            appState.fixedShapes = generateShapes(appState.shapeComplexity, []); // Empty colors initially
+            generateComplexImage(appState.colorComplexity, appState.shapeComplexity);
             performSVD();
 
             // Set initial rank to match the actual rank and update slider limits
             updateRankSliderLimits();
-            currentRank = Math.min(currentColorComplexity, 3);
-            document.getElementById('rankSlider').value = currentRank;
-            document.getElementById('rankValue').textContent = currentRank;
+            appState.currentRank = Math.min(appState.colorComplexity, 3);
+            document.getElementById('rankSlider').value = appState.currentRank;
+            document.getElementById('rankValue').textContent = appState.currentRank;
 
             // Set up rank slider interaction listeners
             setupRankSliderInteraction();
@@ -140,17 +132,17 @@
 
         // Update rank slider limits based on current color complexity
         function updateRankSliderLimits() {
-            const actualRank = Math.min(currentColorComplexity, 3);
+            const actualRank = Math.min(appState.colorComplexity, 3);
             const rankSlider = document.getElementById('rankSlider');
 
             // Update max value to match actual rank
             rankSlider.max = actualRank;
 
             // If current rank is higher than the new max, adjust it
-            if (currentRank > actualRank) {
-                currentRank = actualRank;
-                rankSlider.value = currentRank;
-                document.getElementById('rankValue').textContent = currentRank;
+            if (appState.currentRank > actualRank) {
+                appState.currentRank = actualRank;
+                rankSlider.value = appState.currentRank;
+                document.getElementById('rankValue').textContent = appState.currentRank;
             }
         }
 
@@ -160,7 +152,7 @@
 
             // Mouse events
             rankSlider.addEventListener('mousedown', () => {
-                isRankSliderActive = true;
+                appState.isRankSliderActive = true;
                 // Immediately show highlighting when user starts dragging
                 drawUMatrix();
                 drawSigmaMatrix();
@@ -169,7 +161,7 @@
             });
 
             rankSlider.addEventListener('mouseup', () => {
-                isRankSliderActive = false;
+                appState.isRankSliderActive = false;
                 // Hide highlighting when user stops dragging
                 drawUMatrix();
                 drawSigmaMatrix();
@@ -179,7 +171,7 @@
 
             // Touch events for mobile
             rankSlider.addEventListener('touchstart', () => {
-                isRankSliderActive = true;
+                appState.isRankSliderActive = true;
                 drawUMatrix();
                 drawSigmaMatrix();
                 drawVMatrix();
@@ -187,7 +179,7 @@
             });
 
             rankSlider.addEventListener('touchend', () => {
-                isRankSliderActive = false;
+                appState.isRankSliderActive = false;
                 drawUMatrix();
                 drawSigmaMatrix();
                 drawVMatrix();
@@ -205,7 +197,7 @@
             let adjustedShapeComplexity = newShapeComplexity;
 
             // If user increases color complexity beyond shape complexity, increase shapes too
-            if (newColorComplexity > currentShapeComplexity && newColorComplexity !== currentColorComplexity) {
+            if (newColorComplexity > appState.shapeComplexity && newColorComplexity !== appState.colorComplexity) {
                 adjustedShapeComplexity = Math.max(newShapeComplexity, newColorComplexity);
                 document.getElementById('shapeSlider').value = adjustedShapeComplexity;
                 document.getElementById('shapeValue').textContent = adjustedShapeComplexity;
@@ -221,7 +213,7 @@
             }
 
             // If user decreases shape complexity below color complexity, decrease colors too
-            if (newShapeComplexity < currentColorComplexity && newShapeComplexity !== currentShapeComplexity) {
+            if (newShapeComplexity < appState.colorComplexity && newShapeComplexity !== appState.shapeComplexity) {
                 adjustedColorComplexity = Math.min(newColorComplexity, newShapeComplexity);
                 document.getElementById('colorSlider').value = adjustedColorComplexity;
                 document.getElementById('colorValue').textContent = adjustedColorComplexity;
@@ -241,16 +233,16 @@
             document.getElementById('shapeValue').textContent = adjustedShapeComplexity;
 
             // Add or remove shapes if shape complexity changed
-            if (adjustedShapeComplexity !== currentShapeComplexity) {
-                if (adjustedShapeComplexity > currentShapeComplexity) {
-                    addShapesToPattern(adjustedShapeComplexity - currentShapeComplexity);
+            if (adjustedShapeComplexity !== appState.shapeComplexity) {
+                if (adjustedShapeComplexity > appState.shapeComplexity) {
+                    addShapesToPattern(adjustedShapeComplexity - appState.shapeComplexity);
                 }
             }
 
-            currentColorComplexity = adjustedColorComplexity;
-            currentShapeComplexity = adjustedShapeComplexity;
+            appState.colorComplexity = adjustedColorComplexity;
+            appState.shapeComplexity = adjustedShapeComplexity;
 
-            generateComplexImage(currentColorComplexity, currentShapeComplexity);
+            generateComplexImage(appState.colorComplexity, appState.shapeComplexity);
             performSVD();
 
             // Update rank slider limits and preserve current rank if still valid
@@ -262,10 +254,10 @@
         // Update rank slider and display approximation
         function updateRankSlider() {
             const newRank = parseInt(document.getElementById('rankSlider').value);
-            currentRank = newRank;
+            appState.currentRank = newRank;
 
             // Update display value
-            document.getElementById('rankValue').textContent = currentRank;
+            document.getElementById('rankValue').textContent = appState.currentRank;
 
             // Update the title based on rank
             updateImageTitle();
@@ -280,14 +272,14 @@
 
         function updateImageTitle() {
             const subtitleElement = document.querySelector('.matrix-subtitle');
-            const actualRank = Math.min(currentColorComplexity, 3); // Actual rank of the image
+            const actualRank = Math.min(appState.colorComplexity, 3); // Actual rank of the image
 
-            if (currentRank === actualRank) {
+            if (appState.currentRank === actualRank) {
                 subtitleElement.innerHTML = 'Original [100×100×3]';
-            } else if (currentRank === 0) {
+            } else if (appState.currentRank === 0) {
                 subtitleElement.innerHTML = 'Zero [100×100×3]';
             } else {
-                subtitleElement.innerHTML = `Rank-${currentRank} Approximation [100×100×3]`;
+                subtitleElement.innerHTML = `Rank-${appState.currentRank} Approximation [100×100×3]`;
             }
         }
 
@@ -330,11 +322,11 @@
 
         function generateComplexImage(colorComplexity, shapeComplexity) {
             // Initialize image with background
-            currentImageData = new Array(imageSize);
+            appState.imageData = new Array(imageSize);
             for (let i = 0; i < imageSize; i++) {
-                currentImageData[i] = new Array(imageSize);
+                appState.imageData[i] = new Array(imageSize);
                 for (let j = 0; j < imageSize; j++) {
-                    currentImageData[i][j] = [0, 0, 0]; // Black background
+                    appState.imageData[i][j] = [0, 0, 0]; // Black background
                 }
             }
 
@@ -342,7 +334,7 @@
             const colors = getColorPalette(colorComplexity);
 
             // Use fixed shapes but apply current colors
-            const shapesToDraw = assignColorsToFixedShapes(fixedShapes, colors, shapeComplexity);
+            const shapesToDraw = assignColorsToFixedShapes(appState.fixedShapes, colors, shapeComplexity);
 
             // Draw shapes to the image
             drawShapes(shapesToDraw);
@@ -396,11 +388,11 @@
             const shapeTypes = CONFIG.SHAPE_TYPES;
 
             // Add new shapes to the existing pattern
-            for (let i = 0; i < numNewShapes && fixedShapes.length < CONFIG.MAX_SHAPES; i++) {
-                const currentShapeIndex = fixedShapes.length;
+            for (let i = 0; i < numNewShapes && appState.fixedShapes.length < CONFIG.MAX_SHAPES; i++) {
+                const currentShapeIndex = appState.fixedShapes.length;
                 const shapeType = shapeTypes[currentShapeIndex % shapeTypes.length];
 
-                fixedShapes.push({
+                appState.fixedShapes.push({
                     type: shapeType,
                     color: null, // Color will be assigned later
                     x: Math.floor(Math.random() * (imageSize - 40)) + 20,
@@ -453,7 +445,7 @@
                 for (let j = 0; j < imageSize; j++) {
                     const dist = Math.sqrt((i - cy) ** 2 + (j - cx) ** 2);
                     if (dist <= radius) {
-                        currentImageData[i][j] = color;
+                        appState.imageData[i][j] = color;
                     }
                 }
             }
@@ -463,7 +455,7 @@
             for (let i = Math.max(0, Math.floor(y)); i < Math.min(imageSize, Math.ceil(y + height)); i++) {
                 for (let j = Math.max(0, Math.floor(x)); j < Math.min(imageSize, Math.ceil(x + width)); j++) {
                     if (i >= 0 && i < imageSize && j >= 0 && j < imageSize) {
-                        currentImageData[i][j] = color;
+                        appState.imageData[i][j] = color;
                     }
                 }
             }
@@ -476,7 +468,7 @@
                     const relativeI = i - cy;
                     const relativeJ = j - cx;
                     if (relativeJ >= 0 && relativeI >= 0 && relativeJ < (size - relativeI) && relativeI < size) {
-                        currentImageData[i][j] = color;
+                        appState.imageData[i][j] = color;
                     }
                 }
             }
@@ -488,7 +480,7 @@
                     const dx = Math.abs(j - cx);
                     const dy = Math.abs(i - cy);
                     if (dx + dy <= size) {
-                        currentImageData[i][j] = color;
+                        appState.imageData[i][j] = color;
                     }
                 }
             }
@@ -505,7 +497,7 @@
                     // Approximate polygon as circle for simplicity
                     const polygonRadius = size * Math.cos(Math.PI / sides) / Math.cos((angle % (2 * Math.PI / sides)) - Math.PI / sides);
                     if (dist <= Math.abs(polygonRadius) && dist <= size) {
-                        currentImageData[i][j] = color;
+                        appState.imageData[i][j] = color;
                     }
                 }
             }
@@ -523,7 +515,7 @@
                     const starAngle = ((angle + Math.PI) % (2 * Math.PI / 5)) - Math.PI / 5;
                     const starRadius = size * (0.5 + 0.5 * Math.cos(5 * starAngle));
                     if (dist <= starRadius) {
-                        currentImageData[i][j] = color;
+                        appState.imageData[i][j] = color;
                     }
                 }
             }
@@ -535,7 +527,7 @@
                     const dx = (j - cx) / width;
                     const dy = (i - cy) / height;
                     if (dx * dx + dy * dy <= 1) {
-                        currentImageData[i][j] = color;
+                        appState.imageData[i][j] = color;
                     }
                 }
             }
@@ -567,7 +559,7 @@
                     // Heart equation approximation
                     const heartEq = Math.pow(dx * dx + dy * dy - 1, 3) - dx * dx * dy * dy * dy;
                     if (heartEq <= 0 && dx * dx + dy * dy <= 2) {
-                        currentImageData[i][j] = color;
+                        appState.imageData[i][j] = color;
                     }
                 }
             }
@@ -580,15 +572,15 @@
             for (let i = 0; i < imageSize; i++) {
                 for (let j = 0; j < imageSize; j++) {
                     // Normalize to 0-1 range for better numerical stability
-                    const [r, g, b] = currentImageData[i][j];
+                    const [r, g, b] = appState.imageData[i][j];
                     imageMatrix.push([r / 255, g / 255, b / 255]);
                 }
             }
 
             // Perform actual SVD from scratch
-            currentSVD = computeSVDFromScratch(imageMatrix);
+            appState.svdResult = computeSVDFromScratch(imageMatrix);
 
-            console.log(currentSVD);
+            console.log(appState.svdResult);
         }
 
 
@@ -655,9 +647,9 @@
             const imageData = ctx.createImageData(canvasSize, canvasSize);
 
             // Check if we're hovering over A and should use top-k RGB components
-            const useTopKRGBComponents = hoveredOriginalImage;
+            const useTopKRGBComponents = appState.hoveredOriginalImage;
 
-            if (currentRank === 0) {
+            if (appState.currentRank === 0) {
                 // Black image for rank 0
                 for (let i = 0; i < imageData.data.length; i += 4) {
                     imageData.data[i] = 0;     // Red
@@ -667,13 +659,13 @@
                 }
             } else {
                 // Check if we're hovering over A and should use top-k RGB components
-                const useTopKRGBComponents = hoveredOriginalImage;
+                const useTopKRGBComponents = appState.hoveredOriginalImage;
                 let componentsToUse;
 
                 if (useTopKRGBComponents) {
                     // In RGB mode, use top k RGB channels based on their standard deviations
                     const rgbChannels = getRGBChannelsByStdDev();
-                    const topKChannels = rgbChannels.slice(0, currentRank);
+                    const topKChannels = rgbChannels.slice(0, appState.currentRank);
 
                     // Reconstruct using only selected RGB channels (not SVD components)
                     for (let i = 0; i < canvasSize; i++) {
@@ -683,7 +675,7 @@
                             const imgJ = Math.floor(j * imageSize / canvasSize);
 
                             // Get original RGB values
-                            const [originalR, originalG, originalB] = currentImageData[imgI][imgJ];
+                            const [originalR, originalG, originalB] = appState.imageData[imgI][imgJ];
 
                             // Start with black and add only the selected RGB channels
                             let r = 0, g = 0, b = 0;
@@ -710,7 +702,7 @@
                 } else {
                     // Use the first k components in order (normal SVD behavior)
                     componentsToUse = [];
-                    for (let k = 0; k < currentRank; k++) {
+                    for (let k = 0; k < appState.currentRank; k++) {
                         componentsToUse.push({ index: k });
                     }
                 }
@@ -727,11 +719,11 @@
                         let r = 0, g = 0, b = 0;
                         componentsToUse.forEach(comp => {
                             const k = comp.index;
-                            const sigma = currentSVD.sigma[k];
-                            const u_val = currentSVD.U[flatIndex][k];
-                            const v_r = currentSVD.VT[k][0];
-                            const v_g = currentSVD.VT[k][1];
-                            const v_b = currentSVD.VT[k][2];
+                            const sigma = appState.svdResult.sigma[k];
+                            const u_val = appState.svdResult.U[flatIndex][k];
+                            const v_r = appState.svdResult.VT[k][0];
+                            const v_g = appState.svdResult.VT[k][1];
+                            const v_b = appState.svdResult.VT[k][2];
 
                             r += u_val * sigma * v_r;
                             g += u_val * sigma * v_g;
@@ -766,8 +758,8 @@
             canvas.onmouseleave = null;
 
             canvas.onmouseenter = function () {
-                if (!hoveredOriginalImage) {
-                    hoveredOriginalImage = true;
+                if (!appState.hoveredOriginalImage) {
+                    appState.hoveredOriginalImage = true;
                     drawRGBChannelsInMainMatrices();
                     // Also update matrix A to show rank-k approximation using top RGB channels
                     drawOriginalImageWithRank();
@@ -775,7 +767,7 @@
             };
 
             canvas.onmousemove = function (event) {
-                if (hoveredOriginalImage) {
+                if (appState.hoveredOriginalImage) {
                     const rect = canvas.getBoundingClientRect();
                     const x = event.clientX - rect.left;
                     const y = event.clientY - rect.top;
@@ -795,9 +787,9 @@
             };
 
             canvas.onmouseleave = function () {
-                if (hoveredOriginalImage) {
+                if (appState.hoveredOriginalImage) {
                     // First restore the original image display in A (while still hovering)
-                    hoveredOriginalImage = false;
+                    appState.hoveredOriginalImage = false;
                     drawOriginalImageWithRank();
 
                     // Then restore all the other UI elements
@@ -906,7 +898,7 @@
                     const imgI = Math.floor(i * imageSize / uCanvasSize);
                     const imgJ = Math.floor(j * imageSize / uCanvasSize);
                     const pixelIndex = (i * uCanvasSize + j) * 4;
-                    const [r, g, b] = currentImageData[imgI][imgJ];
+                    const [r, g, b] = appState.imageData[imgI][imgJ];
 
                     // Red channel (color-tinted)
                     redImageData.data[pixelIndex] = r;         // Red component
@@ -962,7 +954,7 @@
 
             for (let i = 0; i < imageSize; i++) {
                 for (let j = 0; j < imageSize; j++) {
-                    const [r, g, b] = currentImageData[i][j];
+                    const [r, g, b] = appState.imageData[i][j];
 
                     redSum += r;
                     greenSum += g;
@@ -1015,11 +1007,11 @@
                 sigmaCtx.fillText(`σ${labels[i]}`, i * barWidth + barWidth / 2, y - 5);
             }
 
-            // Temporarily replace currentSVD.VT with RGB identity matrix and reuse drawVMatrix()
-            const originalVT = currentSVD.VT;
+            // Temporarily replace appState.svdResult.VT with RGB identity matrix and reuse drawVMatrix()
+            const originalVT = appState.svdResult.VT;
 
             // Set RGB identity matrix: [1,0,0], [0,1,0], [0,0,1]
-            currentSVD.VT = [
+            appState.svdResult.VT = [
                 [1, 0, 0], // Red row
                 [0, 1, 0], // Green row  
                 [0, 0, 1]  // Blue row
@@ -1029,7 +1021,7 @@
             drawVMatrix();
 
             // Restore original VT matrix
-            currentSVD.VT = originalVT;
+            appState.svdResult.VT = originalVT;
 
             // Update Sigma matrix title and subtitle
             const sigmaTitle = document.querySelector('.matrix-section:nth-child(3) .matrix-title');
@@ -1078,7 +1070,7 @@
                     const imgI = Math.floor(i * imageSize / uCanvasSize);
                     const imgJ = Math.floor(j * imageSize / uCanvasSize);
                     const pixelIndex = (i * uCanvasSize + j) * 4;
-                    const [r, g, b] = currentImageData[imgI][imgJ];
+                    const [r, g, b] = appState.imageData[imgI][imgJ];
 
                     // Red channel with conditional highlighting
                     if (redActive) {
@@ -1218,7 +1210,7 @@
 
             // Update V^T matrix with highlighting based on active channels
             // Save the original hoveredVTRow state
-            const originalHoveredVTRow = hoveredVTRow;
+            const originalHoveredVTRow = appState.hoveredVTRow;
 
             // Set highlighting based on which color channels are active
             // Since hoveredVTRow can only highlight one row at a time, we need a different approach
@@ -1230,20 +1222,20 @@
             };
 
             // For now, set hoveredVTRow to -1 and modify drawVMatrix to check our custom highlighting
-            hoveredVTRow = -1;
+            appState.hoveredVTRow = -1;
 
             // Draw V^T matrix with RGB identity and highlighting
-            const originalVT = currentSVD.VT;
-            currentSVD.VT = [
+            const originalVT = appState.svdResult.VT;
+            appState.svdResult.VT = [
                 [1, 0, 0], // Red row
                 [0, 1, 0], // Green row  
                 [0, 0, 1]  // Blue row
             ];
             drawVMatrix();
-            currentSVD.VT = originalVT;
+            appState.svdResult.VT = originalVT;
 
             // Restore original hoveredVTRow state
-            hoveredVTRow = originalHoveredVTRow;
+            appState.hoveredVTRow = originalHoveredVTRow;
         }
 
         function drawRGBSigmaWithHighlight(redActive, greenActive, blueActive, hoverR, hoverG, hoverB) {
@@ -1262,7 +1254,7 @@
 
             for (let i = 0; i < imageSize; i++) {
                 for (let j = 0; j < imageSize; j++) {
-                    const [r, g, b] = currentImageData[i][j];
+                    const [r, g, b] = appState.imageData[i][j];
 
                     redSum += r;
                     greenSum += g;
@@ -1335,16 +1327,16 @@
             // Calculate the RGB values at the specified position based on the current rank-k approximation
             // This should match what's being displayed in matrix A during hover mode
 
-            if (currentRank === 0) {
+            if (appState.currentRank === 0) {
                 return [0, 0, 0]; // Black for rank 0
             }
 
             // When hovering, we're in RGB channel mode, so use top k RGB channels
             const rgbChannels = getRGBChannelsByStdDev();
-            const topKChannels = rgbChannels.slice(0, currentRank);
+            const topKChannels = rgbChannels.slice(0, appState.currentRank);
 
             // Get original RGB values at this position
-            const [originalR, originalG, originalB] = currentImageData[imgY][imgX];
+            const [originalR, originalG, originalB] = appState.imageData[imgY][imgX];
 
             // Start with black and add only the selected RGB channels
             let r = 0, g = 0, b = 0;
@@ -1367,7 +1359,7 @@
 
             for (let i = 0; i < imageSize; i++) {
                 for (let j = 0; j < imageSize; j++) {
-                    const [r, g, b] = currentImageData[i][j];
+                    const [r, g, b] = appState.imageData[i][j];
 
                     redSum += r;
                     greenSum += g;
@@ -1405,18 +1397,15 @@
             return channels;
         }
 
-        let hoveredVTRow = -1; // Track which V^T row is being hovered
-        let hoveredOriginalImage = false; // Track if hovering over original image A
-
         function updateULabels() {
             for (let i = 0; i < 3; i++) {
                 const label = document.getElementById(`uLabel${i}`);
                 const shapeInfo = document.getElementById(`uShapeInfo${i}`);
-                const isActive = (hoveredVTRow === i) ||
-                    (isRankSliderActive && i < currentRank) ||
+                const isActive = (appState.hoveredVTRow === i) ||
+                    (appState.isRankSliderActive && i < appState.currentRank) ||
                     (window.showFullRankHighlight && i < 3); if (isActive) {
                         // Calculate dynamic color based on V^T row (same as sigma bars)
-                        const row = currentSVD.VT[i];
+                        const row = appState.svdResult.VT[i];
                         const rVal = Math.abs(row[0]);
                         const gVal = Math.abs(row[1]);
                         const bVal = Math.abs(row[2]);
@@ -1467,26 +1456,26 @@
 
                 // Find min/max for normalization for this column
                 let minVal = Infinity, maxVal = -Infinity;
-                for (let i = 0; i < currentSVD.U.length; i++) {
-                    const val = currentSVD.U[i][col];
+                for (let i = 0; i < appState.svdResult.U.length; i++) {
+                    const val = appState.svdResult.U[i][col];
                     minVal = Math.min(minVal, val);
                     maxVal = Math.max(maxVal, val);
                 }
 
                 // Determine if this column should be colored based on V^T hover or rank approximation
-                const shouldColor = (hoveredVTRow === col) ||
-                    (isRankSliderActive && col < currentRank) ||
+                const shouldColor = (appState.hoveredVTRow === col) ||
+                    (appState.isRankSliderActive && col < appState.currentRank) ||
                     (window.showFullRankHighlight && col < 3);                // Draw column as square heatmap (unsquished)
                 for (let i = 0; i < imageSize; i++) {
                     for (let j = 0; j < imageSize; j++) {
                         const idx = i * imageSize + j;
-                        const val = currentSVD.U[idx][col];
+                        const val = appState.svdResult.U[idx][col];
 
                         if (shouldColor) {
                             // Use the exact same calculation as rank-1 components
-                            const sigma = currentSVD.sigma[col];
-                            const vRow = currentSVD.VT[col];
-                            const uValue = currentSVD.U[idx][col];
+                            const sigma = appState.svdResult.sigma[col];
+                            const vRow = appState.svdResult.VT[col];
+                            const uValue = appState.svdResult.U[idx][col];
 
                             // Calculate u_i * sigma_i * v_i^T for this pixel (same as rank-1 components)
                             const r = Math.max(0, Math.min(255, uValue * sigma * vRow[0] * 255));
@@ -1525,8 +1514,8 @@
                 canvas.onmouseleave = null;
 
                 canvas.onmouseover = function () {
-                    if (hoveredVTRow !== col) {
-                        hoveredVTRow = col;
+                    if (appState.hoveredVTRow !== col) {
+                        appState.hoveredVTRow = col;
                         drawUMatrix(); // Redraw U matrix with coloring
                         drawSigmaMatrix(); // Redraw sigma matrix with coloring
                         drawVMatrix(); // Redraw V matrix with highlighting
@@ -1535,8 +1524,8 @@
                 };
 
                 canvas.onmouseleave = function () {
-                    if (hoveredVTRow === col) {
-                        hoveredVTRow = -1;
+                    if (appState.hoveredVTRow === col) {
+                        appState.hoveredVTRow = -1;
                         drawUMatrix(); // Redraw U matrix without coloring
                         drawSigmaMatrix(); // Redraw sigma matrix without coloring
                         drawVMatrix(); // Redraw V matrix without highlighting
@@ -1555,21 +1544,21 @@
             ctx.fillRect(0, 0, canvasSize, canvasSize);
 
             // Draw singular values as bars
-            const maxSigma = Math.max(...currentSVD.sigma);
-            const barWidth = canvasSize / currentSVD.sigma.length;
+            const maxSigma = Math.max(...appState.svdResult.sigma);
+            const barWidth = canvasSize / appState.svdResult.sigma.length;
             const margin = 20;
 
-            for (let i = 0; i < currentSVD.sigma.length; i++) {
-                const height = ((currentSVD.sigma[i] / maxSigma) * (canvasSize - 2 * margin));
+            for (let i = 0; i < appState.svdResult.sigma.length; i++) {
+                const height = ((appState.svdResult.sigma[i] / maxSigma) * (canvasSize - 2 * margin));
                 const x = i * barWidth + barWidth * 0.1;
                 const y = canvasSize - margin - height;
                 const w = barWidth * 0.8;
 
                 // Calculate the color for this singular value based on corresponding V^T row
                 let barColor = '#999'; // Default gray
-                if ((hoveredVTRow === i) || (isRankSliderActive && i < currentRank) || (window.showFullRankHighlight && i < 3)) {
+                if ((appState.hoveredVTRow === i) || (appState.isRankSliderActive && i < appState.currentRank) || (window.showFullRankHighlight && i < 3)) {
                     // Get the RGB values for this V^T row (how this component mixes colors)
-                    const row = currentSVD.VT[i];
+                    const row = appState.svdResult.VT[i];
                     const rVal = Math.abs(row[0]);
                     const gVal = Math.abs(row[1]);
                     const bVal = Math.abs(row[2]);
@@ -1590,7 +1579,7 @@
                 ctx.fillStyle = 'black';
                 ctx.font = '12px Arial';
                 ctx.textAlign = 'center';
-                ctx.fillText(currentSVD.sigma[i].toFixed(1), i * barWidth + barWidth / 2, canvasSize - 5);
+                ctx.fillText(appState.svdResult.sigma[i].toFixed(1), i * barWidth + barWidth / 2, canvasSize - 5);
                 ctx.fillText(`σ${i + 1}`, i * barWidth + barWidth / 2, y - 5);
             }
 
@@ -1610,8 +1599,8 @@
                 // Determine which bar is being hovered
                 const col = Math.floor(x / barWidth);
 
-                if (col >= 0 && col < 3 && col !== hoveredVTRow) {
-                    hoveredVTRow = col;
+                if (col >= 0 && col < 3 && col !== appState.hoveredVTRow) {
+                    appState.hoveredVTRow = col;
                     drawUMatrix(); // Redraw U matrix with coloring
                     drawSigmaMatrix(); // Redraw sigma matrix with coloring
                     drawVMatrix(); // Redraw V matrix with highlighting
@@ -1620,8 +1609,8 @@
             };
 
             canvas.onmouseleave = function () {
-                if (hoveredVTRow !== -1) {
-                    hoveredVTRow = -1;
+                if (appState.hoveredVTRow !== -1) {
+                    appState.hoveredVTRow = -1;
                     drawUMatrix(); // Redraw U matrix without coloring
                     drawSigmaMatrix(); // Redraw sigma matrix without coloring
                     drawVMatrix(); // Redraw V matrix without highlighting
@@ -1642,10 +1631,10 @@
 
             // Find global min/max for consistent coloring
             let minVal = Infinity, maxVal = -Infinity;
-            for (let i = 0; i < currentSVD.VT.length; i++) {
-                for (let j = 0; j < currentSVD.VT[i].length; j++) {
-                    minVal = Math.min(minVal, currentSVD.VT[i][j]);
-                    maxVal = Math.max(maxVal, currentSVD.VT[i][j]);
+            for (let i = 0; i < appState.svdResult.VT.length; i++) {
+                for (let j = 0; j < appState.svdResult.VT[i].length; j++) {
+                    minVal = Math.min(minVal, appState.svdResult.VT[i][j]);
+                    maxVal = Math.max(maxVal, appState.svdResult.VT[i][j]);
                 }
             }
 
@@ -1654,7 +1643,7 @@
             const rowNames = [];
 
             for (let i = 0; i < 3; i++) {
-                const row = currentSVD.VT[i];
+                const row = appState.svdResult.VT[i];
 
                 // Get the RGB values for this row (how this component mixes colors)
                 const rVal = Math.abs(row[0]);
@@ -1686,7 +1675,7 @@
             // Draw matrix cells with colored row backgrounds
             for (let i = 0; i < 3; i++) {
                 for (let j = 0; j < 3; j++) {
-                    const val = currentSVD.VT[i][j];
+                    const val = appState.svdResult.VT[i][j];
 
                     // Use the row's light color as background (no color changes)
                     ctx.fillStyle = rowColors[i].light;
@@ -1717,8 +1706,8 @@
                         (i === 1 && window.rgbHighlightRows.green) ||
                         (i === 2 && window.rgbHighlightRows.blue));
 
-                const shouldHighlight = (hoveredVTRow === i) ||
-                    (isRankSliderActive && i < currentRank) ||
+                const shouldHighlight = (appState.hoveredVTRow === i) ||
+                    (appState.isRankSliderActive && i < appState.currentRank) ||
                     (window.showFullRankHighlight && i < 3) ||
                     isRGBHighlighted; if (shouldHighlight) {
                         const rowY = i * cellSize;
@@ -1785,8 +1774,8 @@
                 // Determine which row is being hovered
                 const row = Math.floor(y / cellSize);
 
-                if (row >= 0 && row < 3 && row !== hoveredVTRow) {
-                    hoveredVTRow = row;
+                if (row >= 0 && row < 3 && row !== appState.hoveredVTRow) {
+                    appState.hoveredVTRow = row;
                     drawUMatrix(); // Redraw U matrix with coloring
                     drawSigmaMatrix(); // Redraw sigma matrix with coloring
                     drawVMatrix(); // Redraw V matrix with highlighting
@@ -1795,8 +1784,8 @@
             };
 
             canvas.onmouseleave = function () {
-                if (hoveredVTRow !== -1) {
-                    hoveredVTRow = -1;
+                if (appState.hoveredVTRow !== -1) {
+                    appState.hoveredVTRow = -1;
                     drawUMatrix(); // Redraw U matrix without coloring
                     drawSigmaMatrix(); // Redraw sigma matrix without coloring
                     drawVMatrix(); // Redraw V matrix without highlighting
