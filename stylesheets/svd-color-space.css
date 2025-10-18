@@ -364,6 +364,7 @@ button:hover {
 
     h1 {
         order: 0;
+        height: 45px;
     }
 
     .equation {
