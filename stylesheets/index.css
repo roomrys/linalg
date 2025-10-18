@@ -196,6 +196,28 @@ body {
     opacity: 1;
 }
 
+.svd-link {
+    position: fixed;
+    bottom: 20px;
+    left: 70px; /* Position to the right of the GitHub link */
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    text-decoration: none;
+}
+
+.svd-link img {
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+}
+
+.svd-link:hover img {
+    opacity: 1;
+}
+
 /* Add to your index.css */
 /* Hide elements until app initializes */
 .main-svg,
