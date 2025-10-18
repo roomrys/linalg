@@ -351,11 +351,6 @@ button:hover {
         padding: 10px 15px;
     }
 
-    body {
-        padding-bottom: 120px;
-        /* Adjust for taller mobile controls */
-    }
-
     h1 {
         font-size: clamp(18px, 4vw, 24px);
     }
