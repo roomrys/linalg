@@ -249,7 +249,7 @@ button:hover {
 .github-link {
     position: fixed;
     bottom: 90px; /* Just above the controls */
-    right: 20px;
+    right: 20px; /* GitHub on the rightmost position */
     z-index: 999;
     display: flex;
     align-items: center;
@@ -266,6 +266,30 @@ button:hover {
 }
 
 .github-link:hover .github-icon {
+    filter: grayscale(0) opacity(1);
+}
+
+.website-link {
+    position: fixed;
+    bottom: 90px; /* Just above the controls */
+    right: 78px; /* Website link to the left of GitHub link */
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px; /* Similar height to equation + flattening note */
+}
+
+.website-icon {
+    width: 28px;
+    height: 28px;
+    filter: grayscale(1) opacity(0.7);
+    transition: filter 0.3s ease;
+    border-radius: 50%;
+}
+
+.website-link:hover .website-icon {
     filter: grayscale(0) opacity(1);
 }
 
@@ -364,10 +388,21 @@ button:hover {
     .github-link {
         width: 42px;
         height: 42px;
-        right: 15px;
+        right: 15px; /* GitHub on the rightmost position */
     }
 
     .github-icon {
+        width: 24px;
+        height: 24px;
+    }
+
+    .website-link {
+        width: 42px;
+        height: 42px;
+        right: 63px; /* Website link to the left of GitHub */
+    }
+
+    .website-icon {
         width: 24px;
         height: 24px;
     }
@@ -487,16 +522,36 @@ button:hover {
         padding: 8px;
     }
 
+    .links-container {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        order: 4; /* Position after visualization but before controls */
+        margin: 20px 0 0 0;
+    }
+
     .github-link {
         position: static; /* Remove fixed positioning */
         width: 36px;
         height: 36px;
-        margin: 20px auto 0; /* Center horizontally and add spacing */
-        order: 4; /* Position after visualization but before controls */
+        margin: 0; /* Remove auto margins */
         display: flex; /* Maintain flex properties */
     }
 
     .github-icon {
+        width: 20px;
+        height: 20px;
+    }
+
+    .website-link {
+        position: static; /* Remove fixed positioning */
+        width: 36px;
+        height: 36px;
+        margin: 0; /* Remove auto margins */
+        display: flex; /* Maintain flex properties */
+    }
+
+    .website-icon {
         width: 20px;
         height: 20px;
     }
