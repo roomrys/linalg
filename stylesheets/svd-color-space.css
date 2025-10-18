@@ -356,7 +356,7 @@ button:hover {
     }
 }
 
-@media (max-width: 492px) {
+@media (max-width: 515px) {
     .container {
         display: flex;
         flex-direction: column;
