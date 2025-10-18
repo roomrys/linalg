@@ -100,6 +100,7 @@
         import { AppState } from './scripts/svd-color-space/app-state.js';
         import { ImageGenerator } from './scripts/svd-color-space/image-generator.js';
         import { CanvasRenderer } from './scripts/svd-color-space/canvas-renderer.js';
+        import { InteractionHandler } from './scripts/svd-color-space/interaction-handler.js';
 
         // Image dimensions
         const imageSize = CONFIG.IMAGE_SIZE;
@@ -109,6 +110,7 @@
         const appState = new AppState();
         const imageGenerator = new ImageGenerator();
         const canvasRenderer = new CanvasRenderer(appState);
+        const interactionHandler = new InteractionHandler(appState, canvasRenderer, imageGenerator.generateComplexImage.bind(imageGenerator), performSVD);
 
         // Initialize the visualization
         function init() {
@@ -117,217 +119,7 @@
             appState.imageData = imageGenerator.generateComplexImage(appState.colorComplexity, appState.shapeComplexity, appState.fixedShapes);
             performSVD();
 
-            // Set initial rank to match the actual rank and update slider limits
-            updateRankSliderLimits();
-            appState.currentRank = Math.min(appState.colorComplexity, 3);
-            document.getElementById('rankSlider').value = appState.currentRank;
-            document.getElementById('rankValue').textContent = appState.currentRank;
-
-            // Set up rank slider interaction listeners
-            setupRankSliderInteraction();
-
-            // Set up event listeners for sliders
-            document.getElementById('colorSlider').addEventListener('input', updateSliders);
-            document.getElementById('shapeSlider').addEventListener('input', updateSliders);
-            document.getElementById('rankSlider').addEventListener('input', updateRankSlider);
-
             canvasRenderer.drawAll();
-        }
-
-        // Update rank slider limits based on current color complexity
-        function updateRankSliderLimits() {
-            const actualRank = Math.min(appState.colorComplexity, 3);
-            const rankSlider = document.getElementById('rankSlider');
-
-            // Update max value to match actual rank
-            rankSlider.max = actualRank;
-
-            // If current rank is higher than the new max, adjust it
-            if (appState.currentRank > actualRank) {
-                appState.currentRank = actualRank;
-                rankSlider.value = appState.currentRank;
-                document.getElementById('rankValue').textContent = appState.currentRank;
-            }
-        }
-
-        // Set up rank slider interaction detection
-        function setupRankSliderInteraction() {
-            const rankSlider = document.getElementById('rankSlider');
-
-            // Mouse events
-            rankSlider.addEventListener('mousedown', () => {
-                appState.isRankSliderActive = true;
-                // Immediately show highlighting when user starts dragging
-                canvasRenderer.drawUMatrix();
-                canvasRenderer.drawSigmaMatrix();
-                canvasRenderer.drawVMatrix();
-                canvasRenderer.updateULabels();
-            });
-
-            rankSlider.addEventListener('mouseup', () => {
-                appState.isRankSliderActive = false;
-                // Hide highlighting when user stops dragging
-                canvasRenderer.drawUMatrix();
-                canvasRenderer.drawSigmaMatrix();
-                canvasRenderer.drawVMatrix();
-                canvasRenderer.updateULabels();
-            });
-
-            // Touch events for mobile
-            rankSlider.addEventListener('touchstart', () => {
-                appState.isRankSliderActive = true;
-                canvasRenderer.drawUMatrix();
-                canvasRenderer.drawSigmaMatrix();
-                canvasRenderer.drawVMatrix();
-                canvasRenderer.updateULabels();
-            });
-
-            rankSlider.addEventListener('touchend', () => {
-                appState.isRankSliderActive = false;
-                canvasRenderer.drawUMatrix();
-                canvasRenderer.drawSigmaMatrix();
-                canvasRenderer.drawVMatrix();
-                canvasRenderer.updateULabels();
-            });
-        }
-
-        // Update slider values and regenerate image
-        function updateSliders() {
-            const newColorComplexity = parseInt(document.getElementById('colorSlider').value);
-            const newShapeComplexity = parseInt(document.getElementById('shapeSlider').value);
-
-            // Auto-adjust logic: ensure we have enough shapes to support the color complexity
-            let adjustedColorComplexity = newColorComplexity;
-            let adjustedShapeComplexity = newShapeComplexity;
-
-            // If user increases color complexity beyond shape complexity, increase shapes too
-            if (newColorComplexity > appState.shapeComplexity && newColorComplexity !== appState.colorComplexity) {
-                adjustedShapeComplexity = Math.max(newShapeComplexity, newColorComplexity);
-                document.getElementById('shapeSlider').value = adjustedShapeComplexity;
-                document.getElementById('shapeValue').textContent = adjustedShapeComplexity;
-
-                // Visual feedback for auto-adjustment
-                document.getElementById('shapeSliderGroup').classList.add('slider-auto-adjusted');
-                setTimeout(() => {
-                    document.getElementById('shapeSliderGroup').classList.remove('slider-auto-adjusted');
-                }, CONFIG.ANIMATION_DURATION);
-
-                // Show brief notification
-                showSliderNotification(`Shape complexity automatically increased to ${adjustedShapeComplexity} to support ${newColorComplexity} colors`);
-            }
-
-            // If user decreases shape complexity below color complexity, decrease colors too
-            if (newShapeComplexity < appState.colorComplexity && newShapeComplexity !== appState.shapeComplexity) {
-                adjustedColorComplexity = Math.min(newColorComplexity, newShapeComplexity);
-                document.getElementById('colorSlider').value = adjustedColorComplexity;
-                document.getElementById('colorValue').textContent = adjustedColorComplexity;
-
-                // Visual feedback for auto-adjustment
-                document.getElementById('colorSliderGroup').classList.add('slider-auto-adjusted');
-                setTimeout(() => {
-                    document.getElementById('colorSliderGroup').classList.remove('slider-auto-adjusted');
-                }, CONFIG.ANIMATION_DURATION);
-
-                // Show brief notification
-                showSliderNotification(`Color complexity automatically decreased to ${adjustedColorComplexity} to match ${newShapeComplexity} shapes`);
-            }
-
-            // Update display values
-            document.getElementById('colorValue').textContent = adjustedColorComplexity;
-            document.getElementById('shapeValue').textContent = adjustedShapeComplexity;
-
-            // Add or remove shapes if shape complexity changed
-            if (adjustedShapeComplexity !== appState.shapeComplexity) {
-                if (adjustedShapeComplexity > appState.shapeComplexity) {
-                    addShapesToPattern(adjustedShapeComplexity - appState.shapeComplexity);
-                }
-            }
-
-            appState.colorComplexity = adjustedColorComplexity;
-            appState.shapeComplexity = adjustedShapeComplexity;
-
-            appState.imageData = imageGenerator.generateComplexImage(appState.colorComplexity, appState.shapeComplexity, appState.fixedShapes);
-            performSVD();
-
-            // Update rank slider limits and preserve current rank if still valid
-            updateRankSliderLimits();
-
-            canvasRenderer.drawAll();
-        }
-
-        // Update rank slider and display approximation
-        function updateRankSlider() {
-            const newRank = parseInt(document.getElementById('rankSlider').value);
-            appState.currentRank = newRank;
-
-            // Update display value
-            document.getElementById('rankValue').textContent = appState.currentRank;
-
-            // Update the title based on rank
-            canvasRenderer.updateImageTitle();
-
-            // Redraw with current highlighting state (depends on isRankSliderActive)
-            canvasRenderer.drawOriginalImageWithRank();
-            canvasRenderer.drawUMatrix();
-            canvasRenderer.drawSigmaMatrix();
-            canvasRenderer.drawVMatrix();
-            canvasRenderer.updateULabels();
-        }        // Briefly highlight all components at full rank, then fade to default
-
-        // Add notification function
-        function showSliderNotification(message) {
-            // Create notification element if it doesn't exist
-            let notification = document.getElementById('sliderNotification');
-            if (!notification) {
-                notification = document.createElement('div');
-                notification.id = 'sliderNotification';
-                notification.style.cssText = `
-                    position: fixed;
-                    top: 20px;
-                    left: 50%;
-                    transform: translateX(-50%);
-                    background: #007bff;
-                    color: white;
-                    padding: 10px 20px;
-                    border-radius: 5px;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                    z-index: 10000;
-                    font-size: 14px;
-                    max-width: 400px;
-                    text-align: center;
-                    opacity: 0;
-                    transition: opacity 0.3s ease;
-                `;
-                document.body.appendChild(notification);
-            }
-
-            // Show notification
-            notification.textContent = message;
-            notification.style.opacity = '1';
-
-            // Hide after 2.5 seconds
-            setTimeout(() => {
-                notification.style.opacity = '0';
-            }, 2500);
-        }
-
-        function addShapesToPattern(numNewShapes) {
-            const shapeTypes = CONFIG.SHAPE_TYPES;
-
-            // Add new shapes to the existing pattern
-            for (let i = 0; i < numNewShapes && appState.fixedShapes.length < CONFIG.MAX_SHAPES; i++) {
-                const currentShapeIndex = appState.fixedShapes.length;
-                const shapeType = shapeTypes[currentShapeIndex % shapeTypes.length];
-
-                appState.fixedShapes.push({
-                    type: shapeType,
-                    color: null, // Color will be assigned later
-                    x: Math.floor(Math.random() * (imageSize - 40)) + 20,
-                    y: Math.floor(Math.random() * (imageSize - 40)) + 20,
-                    size: Math.floor(Math.random() * 20) + 15,
-                    rotation: Math.random() * 2 * Math.PI
-                });
-            }
         }
 
         function performSVD() {

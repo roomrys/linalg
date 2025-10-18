@@ -75,7 +75,6 @@ export class CanvasRenderer {
 
         // Skip the SVD reconstruction since we did RGB reconstruction above
         ctx.putImageData(imageData, 0, 0);
-        this.setupOriginalImageInteraction();
         return;
       } else {
         // Use the first k components in order (normal SVD behavior)
@@ -125,9 +124,6 @@ export class CanvasRenderer {
     }
 
     ctx.putImageData(imageData, 0, 0);
-
-    // Setup hover interaction for original image A
-    this.setupOriginalImageInteraction();
   }
 
   drawUMatrix() {
@@ -197,9 +193,6 @@ export class CanvasRenderer {
         }
       }
     }
-
-    // Set up hover interactions for each U matrix canvas
-    this.setupUMatrixInteraction();
   }
 
   drawSigmaMatrix() {
@@ -259,9 +252,6 @@ export class CanvasRenderer {
       );
       ctx.fillText(`σ${i + 1}`, i * barWidth + barWidth / 2, y - 5);
     }
-
-    // Set up hover interactions for sigma matrix
-    this.setupSigmaMatrixInteraction(canvas, barWidth);
   }
 
   drawVMatrix() {
@@ -410,9 +400,6 @@ export class CanvasRenderer {
       ctx.textAlign = "center";
       ctx.fillText(rowNames[i], labelX + labelWidth / 2, labelY + 10);
     }
-
-    // Add mouse event listeners for hover interaction
-    this.setupVMatrixInteraction(canvas, cellSize);
   }
 
   updateImageTitle() {
@@ -476,223 +463,6 @@ export class CanvasRenderer {
         shapeInfo.style.color = "#666";
       }
     }
-  }
-
-  setupOriginalImageInteraction() {
-    const canvas = document.getElementById("originalImage");
-
-    // Remove existing listeners to prevent duplicates
-    canvas.onmouseenter = null;
-    canvas.onmouseleave = null;
-
-    canvas.onmouseenter = () => {
-      if (!this.state.hoveredOriginalImage) {
-        this.state.hoveredOriginalImage = true;
-        this.drawRGBChannelsInMainMatrices();
-        // Also update matrix A to show rank-k approximation using top RGB channels
-        this.drawOriginalImageWithRank();
-      }
-    };
-
-    canvas.onmousemove = (event) => {
-      if (this.state.hoveredOriginalImage) {
-        const rect = canvas.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-
-        // Convert canvas coordinates to image coordinates
-        const imgX = Math.floor((x * this.imageSize) / this.canvasSize);
-        const imgY = Math.floor((y * this.imageSize) / this.canvasSize);
-
-        // Get the RGB values from the displayed rank-k approximation at this position
-        if (
-          imgX >= 0 &&
-          imgX < this.imageSize &&
-          imgY >= 0 &&
-          imgY < this.imageSize
-        ) {
-          const [r, g, b] = this.getRankApproximationRGBAt(imgX, imgY);
-          this.drawRGBChannelsWithHighlight(imgX, imgY, r, g, b);
-          // Keep the rank-k approximation in A updated
-          this.drawOriginalImageWithRank();
-        }
-      }
-    };
-
-    canvas.onmouseleave = () => {
-      if (this.state.hoveredOriginalImage) {
-        // First restore the original image display in A (while still hovering)
-        this.state.hoveredOriginalImage = false;
-        this.drawOriginalImageWithRank();
-
-        // Then restore all the other UI elements
-        // Restore U matrix display
-        const uMatrixContainer = document.querySelector(
-          ".matrix-section:nth-child(2) .matrix-canvas-container"
-        );
-        const originalUDisplay = uMatrixContainer.querySelector(
-          'div[style*="display: flex"], div[style*="display: none"]'
-        );
-        if (originalUDisplay) {
-          originalUDisplay.style.display = "flex";
-        }
-
-        // Hide the red overlay canvas
-        const redOverlayCanvas = document.getElementById("redOverlayCanvas");
-        if (redOverlayCanvas) {
-          redOverlayCanvas.style.display = "none";
-        }
-
-        // Restore original titles and subtitles
-        const mainTitle = document.querySelector("h1");
-        mainTitle.textContent = "SVD in Color Space";
-
-        // Restore original SVD equation
-        const equation = document.querySelector(".equation");
-        if (equation) {
-          equation.innerHTML =
-            "A<sub>f</sub> = U × Σ × V<sup>T</sup> &nbsp;&nbsp;";
-        }
-
-        const uTitle = document.querySelector(
-          ".matrix-section:nth-child(2) .matrix-title"
-        );
-        const uSubtitle = document.querySelector(
-          ".matrix-section:nth-child(2) .matrix-subtitle"
-        );
-        const sigmaTitle = document.querySelector(
-          ".matrix-section:nth-child(3) .matrix-title"
-        );
-        const sigmaSubtitle = document.querySelector(
-          ".matrix-section:nth-child(3) .matrix-subtitle"
-        );
-        const vTitle = document.querySelector(
-          ".matrix-section:nth-child(4) .matrix-title"
-        );
-        const vSubtitle = document.querySelector(
-          ".matrix-section:nth-child(4) .matrix-subtitle"
-        );
-
-        uTitle.innerHTML = "U";
-        uTitle.style.color = "";
-        uSubtitle.innerHTML = "Spatial Activations [10,000 × 3]";
-
-        sigmaTitle.innerHTML = "Σ";
-        sigmaTitle.style.color = "";
-        sigmaSubtitle.innerHTML = "Importance Weights [3 x 3]";
-
-        vTitle.innerHTML = "V<sup>T</sup>";
-        vTitle.style.color = "";
-        vSubtitle.innerHTML = "Principal Color Axes [3 x 3]";
-
-        // Remove RGB mode class for mobile
-        document.body.classList.remove("rgb-mode");
-
-        // Clear RGB highlighting state
-        window.rgbHighlightRows = null;
-
-        // Restore original matrices
-        this.drawUMatrix();
-        this.drawSigmaMatrix();
-        this.drawVMatrix();
-        this.updateULabels();
-      }
-    };
-  }
-
-  setupUMatrixInteraction() {
-    for (let col = 0; col < 3; col++) {
-      const canvas = document.getElementById(`uMatrix${col}`);
-
-      // Remove existing listeners to prevent duplicates
-      canvas.onmouseover = null;
-      canvas.onmouseleave = null;
-
-      canvas.onmouseover = () => {
-        if (this.state.hoveredVTRow !== col) {
-          this.state.hoveredVTRow = col;
-          this.drawUMatrix(); // Redraw U matrix with coloring
-          this.drawSigmaMatrix(); // Redraw sigma matrix with coloring
-          this.drawVMatrix(); // Redraw V matrix with highlighting
-          this.updateULabels(); // Update labels to show principal component
-        }
-      };
-
-      canvas.onmouseleave = () => {
-        if (this.state.hoveredVTRow === col) {
-          this.state.hoveredVTRow = -1;
-          this.drawUMatrix(); // Redraw U matrix without coloring
-          this.drawSigmaMatrix(); // Redraw sigma matrix without coloring
-          this.drawVMatrix(); // Redraw V matrix without highlighting
-          this.updateULabels(); // Reset labels to original text
-        }
-      };
-    }
-  }
-
-  setupSigmaMatrixInteraction(canvas, barWidth) {
-    // Remove existing listeners to prevent duplicates
-    canvas.onmousemove = null;
-    canvas.onmouseleave = null;
-
-    canvas.onmousemove = (event) => {
-      const rect = canvas.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-
-      // Determine which bar is being hovered
-      const col = Math.floor(x / barWidth);
-
-      if (col >= 0 && col < 3 && col !== this.state.hoveredVTRow) {
-        this.state.hoveredVTRow = col;
-        this.drawUMatrix(); // Redraw U matrix with coloring
-        this.drawSigmaMatrix(); // Redraw sigma matrix with coloring
-        this.drawVMatrix(); // Redraw V matrix with highlighting
-        this.updateULabels(); // Update labels to show principal component
-      }
-    };
-
-    canvas.onmouseleave = () => {
-      if (this.state.hoveredVTRow !== -1) {
-        this.state.hoveredVTRow = -1;
-        this.drawUMatrix(); // Redraw U matrix without coloring
-        this.drawSigmaMatrix(); // Redraw sigma matrix without coloring
-        this.drawVMatrix(); // Redraw V matrix without highlighting
-        this.updateULabels(); // Reset labels to original text
-      }
-    };
-  }
-
-  setupVMatrixInteraction(canvas, cellSize) {
-    // Remove existing listeners to prevent duplicates
-    canvas.onmousemove = null;
-    canvas.onmouseleave = null;
-
-    canvas.onmousemove = (event) => {
-      const rect = canvas.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-
-      // Determine which row is being hovered
-      const row = Math.floor(y / cellSize);
-
-      if (row >= 0 && row < 3 && row !== this.state.hoveredVTRow) {
-        this.state.hoveredVTRow = row;
-        this.drawUMatrix(); // Redraw U matrix with coloring
-        this.drawSigmaMatrix(); // Redraw sigma matrix with coloring
-        this.drawVMatrix(); // Redraw V matrix with highlighting
-        this.updateULabels(); // Update labels to show principal component
-      }
-    };
-
-    canvas.onmouseleave = () => {
-      if (this.state.hoveredVTRow !== -1) {
-        this.state.hoveredVTRow = -1;
-        this.drawUMatrix(); // Redraw U matrix without coloring
-        this.drawSigmaMatrix(); // Redraw sigma matrix without coloring
-        this.drawVMatrix(); // Redraw V matrix without highlighting
-        this.updateULabels(); // Reset labels to original text
-      }
-    };
   }
 
   drawRGBChannelsInMainMatrices() {
