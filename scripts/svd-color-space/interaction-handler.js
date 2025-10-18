@@ -1,20 +1,14 @@
 import { CONFIG } from "./constants.js";
 
 export class InteractionHandler {
-  constructor(
-    appState,
-    canvasRenderer,
-    regenerateImageFunction,
-    performSVDFunction
-  ) {
+  constructor(appState, canvasRenderer, regenerateImageAndSVDFunction) {
     this.state = appState;
     this.renderer = canvasRenderer;
     this.imageSize = CONFIG.IMAGE_SIZE;
     this.canvasSize = CONFIG.CANVAS_SIZE;
     this.uCanvasSize = CONFIG.U_CANVAS_SIZE;
 
-    this.regenerateImage = regenerateImageFunction;
-    this.performSVD = performSVDFunction;
+    this.regenerateImageAndSVD = regenerateImageAndSVDFunction;
 
     this.setupAllInteractions();
   }
@@ -171,17 +165,10 @@ export class InteractionHandler {
     this.state.shapeComplexity = adjustedShapeComplexity;
 
     // Regenerate image and SVD (this should probably be moved to a service class later)
-    this.state.imageData = this.regenerateImage(
-      this.state.colorComplexity,
-      this.state.shapeComplexity,
-      this.state.fixedShapes
-    );
-    this.performSVD();
+    this.regenerateImageAndSVD();
 
     // Update rank slider limits and preserve current rank if still valid
     this.updateRankSliderLimits();
-
-    this.renderer.drawAll();
   }
 
   updateRankSlider() {

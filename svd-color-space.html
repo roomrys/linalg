@@ -96,99 +96,10 @@
     </div>
 
     <script type="module">
-        import { CONFIG } from './scripts/svd-color-space/constants.js';
-        import { AppState } from './scripts/svd-color-space/app-state.js';
-        import { ImageGenerator } from './scripts/svd-color-space/image-generator.js';
-        import { CanvasRenderer } from './scripts/svd-color-space/canvas-renderer.js';
-        import { InteractionHandler } from './scripts/svd-color-space/interaction-handler.js';
+        import { SVDColorSpaceApp } from './scripts/svd-color-space/app.js';
 
-        // Image dimensions
-        const imageSize = CONFIG.IMAGE_SIZE;
-        const canvasSize = CONFIG.CANVAS_SIZE;
-
-        // Initialize application state
-        const appState = new AppState();
-        const imageGenerator = new ImageGenerator();
-        const canvasRenderer = new CanvasRenderer(appState);
-        const interactionHandler = new InteractionHandler(appState, canvasRenderer, imageGenerator.generateComplexImage.bind(imageGenerator), performSVD);
-
-        // Initialize the visualization
-        function init() {
-            // Generate initial fixed shapes
-            appState.fixedShapes = imageGenerator.generateShapes();
-            appState.imageData = imageGenerator.generateComplexImage(appState.colorComplexity, appState.shapeComplexity, appState.fixedShapes);
-            performSVD();
-
-            canvasRenderer.drawAll();
-        }
-
-        function performSVD() {
-            // Convert the 3D image array (100x100x3) into a 2D matrix (10000x3)
-            // Each row represents a pixel with its RGB values
-            const imageMatrix = [];
-            for (let i = 0; i < imageSize; i++) {
-                for (let j = 0; j < imageSize; j++) {
-                    // Normalize to 0-1 range for better numerical stability
-                    const [r, g, b] = appState.imageData[i][j];
-                    imageMatrix.push([r / 255, g / 255, b / 255]);
-                }
-            }
-
-            // Perform actual SVD from scratch
-            appState.svdResult = computeSVDFromScratch(imageMatrix);
-
-            console.log(appState.svdResult);
-        }
-
-        function computeSVDFromScratch(matrix) {
-            let A = new mlMatrix.Matrix(matrix);
-
-            // Perform SVD
-            const svd = new mlMatrix.SingularValueDecomposition(A);
-
-            // Extract components
-            const U = svd.leftSingularVectors.to2DArray();
-            const sigma = svd.diagonal;
-            const V = svd.rightSingularVectors.to2DArray();
-
-            // Transpose V to get V^T (ML-Matrix returns V, but we need V^T)
-            const VT = [];
-            for (let i = 0; i < V[0].length; i++) {
-                VT[i] = [];
-                for (let j = 0; j < V.length; j++) {
-                    VT[i][j] = V[j][i];
-                }
-            }
-
-            // Fix sign ambiguity: make the largest absolute value in each V^T row positive
-            for (let i = 0; i < VT.length; i++) {
-                const row = VT[i];
-                let maxAbsIdx = 0;
-                let maxAbsVal = Math.abs(row[0]);
-
-                for (let j = 1; j < row.length; j++) {
-                    if (Math.abs(row[j]) > maxAbsVal) {
-                        maxAbsVal = Math.abs(row[j]);
-                        maxAbsIdx = j;
-                    }
-                }
-
-                // If the largest element is negative, flip the sign of the entire row
-                // and corresponding column in U
-                if (row[maxAbsIdx] < 0) {
-                    for (let j = 0; j < row.length; j++) {
-                        VT[i][j] = -VT[i][j];
-                    }
-                    for (let k = 0; k < U.length; k++) {
-                        U[k][i] = -U[k][i];
-                    }
-                }
-            }
-
-            return { U, sigma, VT };
-        }
-
-        init();
+        const app = new SVDColorSpaceApp();
+        app.init();
     </script>
 </body>
 
