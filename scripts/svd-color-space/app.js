@@ -30,12 +30,14 @@ export class SVDColorSpaceApp {
   }
 
   regenerateImageAndSVD() {
-    // Generate new image
-    this.state.imageData = this.imageGenerator.generateComplexImage(
-      this.state.colorComplexity,
-      this.state.shapeComplexity,
-      this.state.fixedShapes
-    );
+    // Only generate new image if not using user-uploaded image
+    if (!this.state.isUserUploadedImage) {
+      this.state.imageData = this.imageGenerator.generateComplexImage(
+        this.state.colorComplexity,
+        this.state.shapeComplexity,
+        this.state.fixedShapes
+      );
+    }
 
     // Perform SVD
     this.performSVD();

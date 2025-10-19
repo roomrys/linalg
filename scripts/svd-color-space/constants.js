@@ -10,7 +10,7 @@ export const CONFIG = {
 
   // Animation and interaction
   ANIMATION_DURATION: 500,
-  HOVER_THRESHOLD: 0, // Minimum RGB value to consider "contributing"
+  HOVER_THRESHOLD: 10, // Minimum RGB value to consider "contributing"
 
   // Base color palette
   COLORS: [

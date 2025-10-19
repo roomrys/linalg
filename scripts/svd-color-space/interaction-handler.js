@@ -164,6 +164,13 @@ export class InteractionHandler {
     this.state.colorComplexity = adjustedColorComplexity;
     this.state.shapeComplexity = adjustedShapeComplexity;
 
+    // Reset user uploaded image flag when changing complexity sliders
+    // This allows users to switch back to generated images
+    this.state.isUserUploadedImage = false;
+
+    // Update slider visibility
+    this.updateSliderVisibility();
+
     // Regenerate image and SVD (this should probably be moved to a service class later)
     this.regenerateImageAndSVD();
 
@@ -196,6 +203,12 @@ export class InteractionHandler {
     // Remove existing listeners to prevent duplicates
     canvas.onmouseenter = null;
     canvas.onmouseleave = null;
+    canvas.onclick = null;
+
+    // File upload functionality on click
+    canvas.onclick = () => {
+      this.handleImageUpload();
+    };
 
     canvas.onmouseenter = () => {
       if (!this.state.hoveredOriginalImage) {
@@ -233,6 +246,84 @@ export class InteractionHandler {
         this.exitRGBMode();
       }
     };
+  }
+
+  handleImageUpload() {
+    // Create a hidden file input element
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = "image/*";
+    fileInput.style.display = "none";
+
+    // Handle file selection
+    fileInput.addEventListener("change", (event) => {
+      const file = event.target.files[0];
+      if (file && file.type.startsWith("image/")) {
+        this.processUploadedImage(file);
+      }
+    });
+
+    // Trigger file selection dialog
+    document.body.appendChild(fileInput);
+    fileInput.click();
+    document.body.removeChild(fileInput);
+  }
+
+  processUploadedImage(file) {
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        // Convert image to imageData format and update state
+        const imageData = this.convertImageToImageData(img);
+        this.state.imageData = imageData;
+        this.state.isUserUploadedImage = true;
+
+        // Update slider visibility
+        this.updateSliderVisibility();
+
+        // Trigger regeneration (SVD calculation and rendering)
+        this.regenerateImageAndSVD();
+      };
+      img.src = e.target.result;
+    };
+
+    reader.readAsDataURL(file);
+  }
+
+  convertImageToImageData(img) {
+    // Create a temporary canvas to extract pixel data
+    const tempCanvas = document.createElement("canvas");
+    const tempCtx = tempCanvas.getContext("2d");
+
+    // Set canvas size to match our image size (100x100)
+    const targetSize = CONFIG.IMAGE_SIZE;
+    tempCanvas.width = targetSize;
+    tempCanvas.height = targetSize;
+
+    // Draw the image scaled to fit our target size
+    tempCtx.drawImage(img, 0, 0, targetSize, targetSize);
+
+    // Get pixel data
+    const pixelData = tempCtx.getImageData(0, 0, targetSize, targetSize).data;
+
+    // Convert to our imageData format (100x100x3 array)
+    const imageData = new Array(targetSize);
+    for (let i = 0; i < targetSize; i++) {
+      imageData[i] = new Array(targetSize);
+      for (let j = 0; j < targetSize; j++) {
+        const pixelIndex = (i * targetSize + j) * 4; // RGBA format
+        imageData[i][j] = [
+          pixelData[pixelIndex], // Red
+          pixelData[pixelIndex + 1], // Green
+          pixelData[pixelIndex + 2], // Blue
+          // Alpha channel is ignored
+        ];
+      }
+    }
+
+    return imageData;
   }
 
   exitRGBMode() {
@@ -489,5 +580,25 @@ export class InteractionHandler {
     vTitle.innerHTML = "V<sup>T</sup>";
     vTitle.style.color = "";
     vSubtitle.innerHTML = "Principal Color Axes [3 x 3]";
+  }
+
+  updateSliderVisibility() {
+    const colorSliderGroup = document.getElementById("colorSliderGroup");
+    const shapeSliderGroup = document.getElementById("shapeSliderGroup");
+    const sliderContainer = document.querySelector(".slider-container");
+
+    if (this.state.isUserUploadedImage) {
+      // Hide color and shape sliders when using uploaded image
+      colorSliderGroup.style.display = "none";
+      shapeSliderGroup.style.display = "none";
+      // Add class to center the rank slider
+      sliderContainer.classList.add("rank-only");
+    } else {
+      // Show color and shape sliders when using procedural generation
+      colorSliderGroup.style.display = "block";
+      shapeSliderGroup.style.display = "block";
+      // Remove class to restore normal grid layout
+      sliderContainer.classList.remove("rank-only");
+    }
   }
 }

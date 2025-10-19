@@ -3,6 +3,7 @@ export class AppState {
     // Image and SVD data
     this.imageData = null;
     this.svdResult = null;
+    this.isUserUploadedImage = false;
 
     // Complexity settings
     this.colorComplexity = 3;

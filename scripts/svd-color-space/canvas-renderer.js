@@ -149,33 +149,106 @@ export class CanvasRenderer {
       const shouldColor =
         this.state.hoveredVTRow === col ||
         (this.state.isRankSliderActive && col < this.state.currentRank) ||
-        (window.showFullRankHighlight && col < 3); // Draw column as square heatmap (unsquished)
+        (window.showFullRankHighlight && col < 3);
+
+      // If we need to color this column, pre-calculate all RGB values to find min/max for normalization
+      let coloredValues = null;
+      let globalMin = Infinity,
+        globalMax = -Infinity;
+
+      if (shouldColor) {
+        coloredValues = [];
+        const sigma = this.state.svdResult.sigma[col];
+        const vRow = this.state.svdResult.VT[col];
+
+        // First pass: calculate all values and find global min/max across all channels
+        for (let i = 0; i < this.imageSize; i++) {
+          coloredValues[i] = [];
+          for (let j = 0; j < this.imageSize; j++) {
+            const idx = i * this.imageSize + j;
+            const uValue = this.state.svdResult.U[idx][col];
+
+            // Calculate raw u_i * sigma_i * v_i^T values (without scaling/clamping)
+            const r = uValue * sigma * vRow[0];
+            const g = uValue * sigma * vRow[1];
+            const b = uValue * sigma * vRow[2];
+
+            coloredValues[i][j] = { r, g, b };
+
+            // Track global min/max across all RGB channels
+            globalMin = Math.min(globalMin, r, g, b);
+            globalMax = Math.max(globalMax, r, g, b);
+          }
+        }
+
+        // Debug logging to see what's happening
+        console.log(
+          `U Matrix ${col + 1}: sigma=${sigma.toFixed(4)}, vRow=[${vRow
+            .map((v) => v.toFixed(3))
+            .join(", ")}]`
+        );
+        console.log(
+          `  Global range: [${globalMin.toFixed(4)}, ${globalMax.toFixed(
+            4
+          )}] (range: ${(globalMax - globalMin).toFixed(4)})`
+        );
+      }
+
+      // Draw column as square heatmap (unsquished)
       for (let i = 0; i < this.imageSize; i++) {
         for (let j = 0; j < this.imageSize; j++) {
           const idx = i * this.imageSize + j;
           const val = this.state.svdResult.U[idx][col];
 
           if (shouldColor) {
-            // Use the exact same calculation as rank-1 components
-            const sigma = this.state.svdResult.sigma[col];
-            const vRow = this.state.svdResult.VT[col];
-            const uValue = this.state.svdResult.U[idx][col];
+            // Use globally normalized colored values
+            const rawR = coloredValues[i][j].r;
+            const rawG = coloredValues[i][j].g;
+            const rawB = coloredValues[i][j].b;
 
-            // Calculate u_i * sigma_i * v_i^T for this pixel (same as rank-1 components)
-            const r = Math.max(
-              0,
-              Math.min(255, uValue * sigma * vRow[0] * 255)
-            );
-            const g = Math.max(
-              0,
-              Math.min(255, uValue * sigma * vRow[1] * 255)
-            );
-            const b = Math.max(
-              0,
-              Math.min(255, uValue * sigma * vRow[2] * 255)
-            );
+            // Normalize all channels using the same global range to preserve color relationships
+            const globalRange = globalMax - globalMin;
 
-            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+            if (globalRange > 1e-10) {
+              // Standard normalization using global min/max
+              const r = Math.max(
+                0,
+                Math.min(
+                  255,
+                  Math.floor(((rawR - globalMin) / globalRange) * 255)
+                )
+              );
+              const g = Math.max(
+                0,
+                Math.min(
+                  255,
+                  Math.floor(((rawG - globalMin) / globalRange) * 255)
+                )
+              );
+              const b = Math.max(
+                0,
+                Math.min(
+                  255,
+                  Math.floor(((rawB - globalMin) / globalRange) * 255)
+                )
+              );
+              ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+            } else {
+              // Fallback for very small ranges - use absolute values
+              const r = Math.max(
+                0,
+                Math.min(255, Math.floor(Math.abs(rawR) * 1000))
+              );
+              const g = Math.max(
+                0,
+                Math.min(255, Math.floor(Math.abs(rawG) * 1000))
+              );
+              const b = Math.max(
+                0,
+                Math.min(255, Math.floor(Math.abs(rawB) * 1000))
+              );
+              ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+            }
           } else {
             // Default grayscale
             const normalized = (val - minVal) / (maxVal - minVal);

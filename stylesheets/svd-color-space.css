@@ -75,6 +75,17 @@ canvas {
     height: auto;
 }
 
+/* Make the original image canvas clickable */
+#originalImage {
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+#originalImage:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2);
+}
+
 .matrix-info {
     margin-top: 15px;
     padding: 10px;
@@ -117,6 +128,16 @@ canvas {
     max-width: min(800px, 90vw);
     text-align: left;
     width: 100%;
+}
+
+/* Center the rank slider when it's the only visible slider */
+.slider-container.rank-only {
+    grid-template-columns: 1fr minmax(150px, 300px) 1fr;
+    justify-items: center;
+}
+
+.slider-container.rank-only .slider-group {
+    grid-column: 2;
 }
 
 .slider-group {
